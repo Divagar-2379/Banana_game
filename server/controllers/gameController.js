@@ -1,0 +1,250 @@
+/**
+ * Game Controller - PostgreSQL Version
+ * Handles game logic and external API integration
+ * Demonstrates Interoperability theme
+ */
+
+const axios = require('axios');
+const { query } = require('../config/database');
+
+// External Banana API configuration
+const BANANA_API_URL = process.env.BANANA_API_URL || 'https://marcconrad.com/uob/banana/api.php';
+
+// In-memory game storage (for active games)
+const activeGames = new Map();
+
+// Update user stats in PostgreSQL
+const updateUserStats = async (userId, won, score) => {
+    try {
+        // Get current stats
+        const currentStats = await query(
+            'SELECT games_played, games_won, current_streak, best_streak, total_score FROM users WHERE id = $1',
+            [userId]
+        );
+
+        if (currentStats.rows.length === 0) return null;
+
+        const stats = currentStats.rows[0];
+        const newGamesPlayed = stats.games_played + 1;
+        const newGamesWon = won ? stats.games_won + 1 : stats.games_won;
+        const newCurrentStreak = won ? stats.current_streak + 1 : 0;
+        const newBestStreak = won && newCurrentStreak > stats.best_streak
+            ? newCurrentStreak
+            : stats.best_streak;
+        const newTotalScore = stats.total_score + score;
+
+        // Update database
+        await query(
+            `UPDATE users 
+       SET games_played = $1, 
+           games_won = $2, 
+           current_streak = $3, 
+           best_streak = $4, 
+           total_score = $5,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $6`,
+            [newGamesPlayed, newGamesWon, newCurrentStreak, newBestStreak, newTotalScore, userId]
+        );
+
+        return {
+            gamesPlayed: newGamesPlayed,
+            gamesWon: newGamesWon,
+            currentStreak: newCurrentStreak,
+            bestStreak: newBestStreak,
+            totalScore: newTotalScore
+        };
+    } catch (error) {
+        console.error('Error updating stats:', error);
+        throw error;
+    }
+};
+
+// Start new game
+exports.startGame = async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        // Fetch game data from external Banana API
+        const response = await axios.get(BANANA_API_URL, {
+            timeout: 5000,
+            headers: {
+                'User-Agent': 'Banana-Hunt-Game/1.0'
+            }
+        });
+
+        const gameData = response.data;
+
+        // Validate external API response
+        if (!gameData || !gameData.question || !gameData.solution) {
+            throw new Error('Invalid response from external API');
+        }
+
+        // Create game session
+        const gameId = generateGameId();
+        const gameSession = {
+            id: gameId,
+            userId: userId,
+            question: gameData.question,
+            solution: gameData.solution,
+            startTime: new Date(),
+            attempts: 0,
+            maxAttempts: 3,
+            hintsUsed: 0,
+            status: 'active'
+        };
+
+        // Store in active games
+        activeGames.set(gameId, gameSession);
+
+        // Set timeout to auto-expire game (10 minutes)
+        setTimeout(() => {
+            if (activeGames.has(gameId)) {
+                activeGames.delete(gameId);
+            }
+        }, 600000);
+
+        res.json({
+            success: true,
+            gameId: gameId,
+            question: gameData.question,
+            timeLimit: 60,
+            maxAttempts: 3,
+            message: 'Game started! Guess the number of bananas.'
+        });
+
+    } catch (error) {
+        console.error('Error starting game:', error.message);
+
+        // Fallback: Generate local game if external API fails
+        const fallbackGame = generateLocalGame(req.userId);
+        res.json({
+            success: true,
+            ...fallbackGame,
+            warning: 'Using local game mode (external API unavailable)'
+        });
+    }
+};
+
+// Submit answer
+exports.submitAnswer = async (req, res) => {
+    try {
+        const { gameId, answer } = req.body;
+        const userId = req.userId;
+
+        // Retrieve game session
+        const game = activeGames.get(gameId);
+
+        if (!game) {
+            return res.status(404).json({ message: 'Game not found or expired' });
+        }
+
+        if (game.userId !== userId) {
+            return res.status(403).json({ message: 'Unauthorized access to game' });
+        }
+
+        if (game.status !== 'active') {
+            return res.status(400).json({ message: 'Game already completed' });
+        }
+
+        game.attempts += 1;
+
+        const userAnswer = parseInt(answer);
+        const isCorrect = userAnswer === game.solution;
+
+        if (isCorrect) {
+            // Calculate score
+            const endTime = new Date();
+            const timeTaken = (endTime - game.startTime) / 1000;
+            const baseScore = 100;
+            const attemptPenalty = (game.attempts - 1) * 20;
+            const timeBonus = Math.max(0, 60 - timeTaken);
+            const finalScore = Math.floor(baseScore - attemptPenalty + timeBonus);
+
+            game.status = 'won';
+
+            // Update user stats in PostgreSQL
+            const newStats = await updateUserStats(userId, true, Math.max(0, finalScore));
+
+            // Clean up
+            activeGames.delete(gameId);
+
+            return res.json({
+                success: true,
+                correct: true,
+                score: Math.max(0, finalScore),
+                attempts: game.attempts,
+                message: '🎉 Correct! Great job!',
+                stats: newStats
+            });
+
+        } else {
+            const remainingAttempts = game.maxAttempts - game.attempts;
+
+            if (remainingAttempts <= 0) {
+                game.status = 'lost';
+
+                // Update user stats (loss)
+                const newStats = await updateUserStats(userId, false, 0);
+
+                activeGames.delete(gameId);
+
+                return res.json({
+                    success: true,
+                    correct: false,
+                    gameOver: true,
+                    solution: game.solution,
+                    message: `Game Over! The answer was ${game.solution}`,
+                    stats: newStats
+                });
+            }
+
+            // Provide hint if second attempt
+            let hint = null;
+            if (game.attempts === 2) {
+                hint = userAnswer > game.solution ? 'Try a lower number' : 'Try a higher number';
+            }
+
+            return res.json({
+                success: true,
+                correct: false,
+                remainingAttempts,
+                hint,
+                message: '❌ Wrong! Try again.'
+            });
+        }
+
+    } catch (error) {
+        console.error('Error submitting answer:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Helper functions
+function generateGameId() {
+    return 'game_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+function generateLocalGame(userId) {
+    const gameId = generateGameId();
+    const solution = Math.floor(Math.random() * 9) + 1;
+
+    const gameSession = {
+        id: gameId,
+        userId: userId,
+        solution: solution,
+        startTime: new Date(),
+        attempts: 0,
+        maxAttempts: 3,
+        status: 'active'
+    };
+
+    activeGames.set(gameId, gameSession);
+
+    return {
+        gameId: gameId,
+        question: `/api/game/image/${solution}`,
+        timeLimit: 60,
+        maxAttempts: 3,
+        message: 'Game started (local mode)!'
+    };
+}
