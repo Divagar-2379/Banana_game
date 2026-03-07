@@ -14,7 +14,7 @@ Players guess how many bananas are shown in an image within 60 seconds. The game
 
 ## 🛠 Tech Stack
 
-- **P*stgree - Database
+- **Postgree - Database
 - **E**xpress - Backend Framework
 - **R**eact - Frontend Library
 - **N**ode.js - Runtime Environment
