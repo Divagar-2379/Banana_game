@@ -1,123 +1,48 @@
-/* Global Styles */
-.app {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased selection:bg-indigo-100 selection:text-indigo-900;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
 }
 
-.main-content {
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
+@layer components {
+  /* Common glassmorphism container */
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl shadow-slate-200/50 rounded-2xl;
+  }
+  
+  /* Primary Gradient Button */
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center px-6 py-3 font-semibold text-white transition-all duration-300 ease-out bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl hover:from-indigo-600 hover:to-purple-700 hover:shadow-lg hover:shadow-indigo-500/25 active:scale-95 disabled:opacity-70 disabled:pointer-events-none;
+  }
+
+  /* Secondary Button */
+  .btn-secondary {
+    @apply relative inline-flex items-center justify-center px-6 py-3 font-semibold text-slate-700 transition-all duration-300 ease-out bg-white border border-slate-200 shadow-sm rounded-xl hover:bg-slate-50 hover:border-slate-300 hover:shadow active:scale-95 disabled:opacity-70 disabled:pointer-events-none;
+  }
+
+  /* Outline Button */
+  .btn-outline {
+    @apply relative inline-flex items-center justify-center px-4 py-2 font-medium text-indigo-600 transition-all duration-300 ease-out border-2 border-indigo-100 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 active:scale-95;
+  }
+
+  /* Form Inputs */
+  .input-field {
+    @apply w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400;
+  }
 }
 
-/* Button Styles */
-.btn {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-}
-
-.btn-secondary {
-    background: white;
-    color: #667eea;
-    border: 2px solid #667eea;
-}
-
-.btn-danger {
-    background: #e74c3c;
-    color: white;
-}
-
-/* Form Styles */
-.form-container {
-    background: white;
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
-    margin: 40px auto;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: #333;
-    font-weight: 600;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 10px;
-    font-size: 16px;
-    transition: border-color 0.3s;
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: #667eea;
-}
-
-.error-message {
-    color: #e74c3c;
-    margin-top: 10px;
-    font-size: 14px;
-}
-
-.success-message {
-    color: #27ae60;
-    margin-top: 10px;
-    font-size: 14px;
-}
-
-/* Card Styles */
-.card {
-    background: white;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    margin: 20px 0;
-}
-
-/* Loading Spinner */
-.loading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 200px;
-    color: white;
-    font-size: 18px;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .main-content {
-        padding: 10px;
-    }
-
-    .form-container {
-        margin: 20px 10px;
-        padding: 30px 20px;
-    }
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
