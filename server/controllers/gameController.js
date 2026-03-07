@@ -240,9 +240,33 @@ function generateLocalGame(userId) {
 
     activeGames.set(gameId, gameSession);
 
+    // Create a beautifully styled SVG as base64 so no extra route is needed
+    // The SVGs render bananas arranged neatly
+    let bananasText = Array(solution).fill('🍌').join(' ');
+
+    // Create an elegant fallback image
+    const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+        <defs>
+            <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1e293b"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="15" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+        </defs>
+        <rect width="800" height="500" rx="30" fill="url(#bg)" />
+        <circle cx="400" cy="250" r="180" fill="#334155" opacity="0.3" filter="url(#glow)"/>
+        <text x="50%" y="50%" font-size="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle" dominant-baseline="central">${bananasText}</text>
+        <text x="50%" y="420" font-size="28" font-family="sans-serif" font-weight="bold" fill="#94a3b8" text-anchor="middle">Local Fallback Level</text>
+    </svg>`;
+
+    const questionDataUri = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
+
     return {
         gameId: gameId,
-        question: `/api/game/image/${solution}`,
+        question: questionDataUri,
         timeLimit: 60,
         maxAttempts: 3,
         message: 'Game started (local mode)!'

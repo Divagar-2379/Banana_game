@@ -2,29 +2,42 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Timer as TimerIcon } from 'lucide-react';
 
-const Timer = ({ timeLeft }) => {
-    // Determine the color and pulsing behavior based on time left
-    let colorClass = 'text-emerald-500 bg-emerald-50 border-emerald-100';
+const Timer = ({ timeLeft, maxTime = 60 }) => {
+    let colorClass = 'text-indigo-600';
+    let progressColor = 'bg-indigo-500';
     let isUrgent = false;
 
     if (timeLeft <= 10) {
-        colorClass = 'text-rose-500 bg-rose-50 border-rose-100';
+        colorClass = 'text-rose-600';
+        progressColor = 'bg-rose-500';
         isUrgent = true;
     } else if (timeLeft <= 30) {
-        colorClass = 'text-amber-500 bg-amber-50 border-amber-100';
+        colorClass = 'text-orange-500';
+        progressColor = 'bg-orange-500';
     }
 
+    const percentage = Math.max(0, Math.min(100, (timeLeft / maxTime) * 100));
+
     return (
-        <motion.div
-            animate={isUrgent ? { scale: [1, 1.05, 1] } : {}}
-            transition={isUrgent ? { repeat: Infinity, duration: 0.5 } : {}}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${colorClass} font-bold text-lg shadow-sm w-32 justify-center`}
-        >
-            <TimerIcon className={`w-5 h-5 ${isUrgent ? 'animate-pulse' : ''}`} />
-            <span className="tabular-nums">
-                00:{timeLeft.toString().padStart(2, '0')}
-            </span>
-        </motion.div>
+        <div className="w-full flex items-center justify-between gap-4">
+            <motion.div
+                animate={isUrgent ? { scale: [1, 1.05, 1] } : {}}
+                transition={isUrgent ? { repeat: Infinity, duration: 0.8 } : {}}
+                className={`flex items-center gap-2 font-bold text-2xl tracking-tight ${colorClass}`}
+            >
+                <TimerIcon className={`w-6 h-6 ${isUrgent ? 'animate-pulse' : 'text-indigo-400'}`} />
+                <span className="tabular-nums">00:{timeLeft.toString().padStart(2, '0')}</span>
+            </motion.div>
+
+            <div className="flex-1 hidden sm:block h-2 bg-indigo-50 rounded-full overflow-hidden shadow-inner">
+                <motion.div
+                    className={`h-full rounded-full ${progressColor}`}
+                    initial={{ width: '100%' }}
+                    animate={{ width: `${percentage}%` }}
+                    transition={{ ease: "linear", duration: 1 }}
+                />
+            </div>
+        </div>
     );
 };
 

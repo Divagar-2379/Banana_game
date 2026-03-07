@@ -2,23 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import Timer from './Timer';
+import { playSound } from '../../utils/audio';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Play, Trophy, XCircle, ArrowRight, Lightbulb, User as UserIcon, Crown } from 'lucide-react';
+import { Loader2, Play, Trophy, XCircle, Lightbulb, User as UserIcon, Crown, Heart } from 'lucide-react';
 
 const Game = () => {
     const { user, updateUserStats } = useAuth();
 
-    // Game state
-    const [gameState, setGameState] = useState('idle'); // idle, loading, playing, won, lost
+    const [gameState, setGameState] = useState('idle');
     const [gameData, setGameData] = useState(null);
     const [guess, setGuess] = useState('');
     const [timeLeft, setTimeLeft] = useState(60);
+    const [maxTime, setMaxTime] = useState(60);
     const [message, setMessage] = useState('');
     const [attempts, setAttempts] = useState(0);
     const [score, setScore] = useState(0);
     const [hint, setHint] = useState(null);
+    const [shakeCount, setShakeCount] = useState(0);
 
-    // Timer effect
+    const currentPotentialScore = score + Math.max(0, 100 + timeLeft);
+    const timeTaken = maxTime - timeLeft;
+
     useEffect(() => {
         let timer;
         if (gameState === 'playing' && timeLeft > 0) {
@@ -35,40 +39,62 @@ const Game = () => {
         return () => clearInterval(timer);
     }, [gameState, timeLeft]);
 
-    // Start new game
-    const startGame = async () => {
+    const handleTimeUp = async () => {
+        setGameState('lost');
+        setMessage("Time's up.");
+        playSound('gameover');
+        try { await api.post('/game/timeout', { gameId: gameData?.gameId }); } catch (e) { }
+    };
+
+    const startNextLevel = async () => {
         try {
             setGameState('loading');
-            setMessage('Preparing your game...');
+            setMessage('Generating next challenge...');
+            setGuess('');
+            setHint(null);
+            const response = await api.post('/game/start');
+            const data = response.data;
+            setGameData(data);
+            setTimeLeft(data.timeLimit || 60);
+            setMaxTime(data.timeLimit || 60);
+            setGameState('playing');
+            setMessage('How many bananas do you see?');
+        } catch (error) {
+            setMessage('Failed to load level.');
+            setGameState('lost');
+        }
+    };
+
+    const startGame = async () => {
+        try {
+            playSound('click');
+            setGameState('loading');
+            setMessage('Preparing session...');
             setGuess('');
             setHint(null);
             setAttempts(0);
-
-            // API call to start game
+            setScore(0);
             const response = await api.post('/game/start');
             const data = response.data;
-
             setGameData(data);
-            setTimeLeft(data.timeLimit);
+            setTimeLeft(data.timeLimit || 60);
+            setMaxTime(data.timeLimit || 60);
             setGameState('playing');
-            setMessage('How many bananas do you see in the image?');
-
+            setMessage('How many bananas do you see?');
         } catch (error) {
-            console.error('Error starting game:', error);
-            setMessage('Failed to start game. Please try again.');
+            setMessage('Failed to start. Please try again.');
             setGameState('idle');
         }
     };
 
-    // Handle user input change event
     const handleInputChange = (e) => {
         const value = e.target.value;
         if (value === '' || (/^[1-9]$/.test(value))) {
             setGuess(value);
+            if (value) playSound('click');
         }
     };
 
-    // Handle form submit event
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
         if (!guess || gameState !== 'playing') return;
@@ -80,46 +106,41 @@ const Game = () => {
             });
 
             const result = response.data;
-            setAttempts(prev => prev + 1);
 
             if (result.correct) {
                 setGameState('won');
-                setScore(result.score);
-                setMessage(`🎉 Outstanding! You scored ${result.score} points!`);
+                setScore(prev => prev + result.score);
+                setMessage(`Correct.`);
+                playSound('win');
                 updateUserStats(result.stats);
+                setTimeout(() => startNextLevel(), 1500);
             } else {
-                if (result.gameOver) {
+                setGuess('');
+                const newAttempts = attempts + 1;
+                setAttempts(newAttempts);
+
+                if (result.gameOver || newAttempts >= 3) {
                     setGameState('lost');
-                    setMessage(result.message);
+                    setMessage(`Game Over. The correct answer was ${result.solution || 'hidden'}.`);
+                    playSound('gameover');
                     updateUserStats(result.stats);
                 } else {
                     setHint(result.hint);
-                    setGuess('');
+                    setShakeCount(s => s + 1);
+                    playSound('wrong');
                 }
             }
         } catch (error) {
-            console.error('Error submitting answer:', error);
-            setMessage('Error submitting answer. Try again.');
+            setMessage('Network error. Try again.');
         }
     };
 
-    // Handle time up event
-    const handleTimeUp = async () => {
-        setGameState('lost');
-        setMessage("⏰ Time's up! Game over.");
-        try {
-            await api.post('/game/timeout', { gameId: gameData.gameId });
-        } catch (error) {
-            console.error('Error notifying timeout:', error);
-        }
-    };
-
-    // Keyboard event handler
     useEffect(() => {
         const handleKeyPress = (e) => {
             if (gameState === 'playing') {
                 if (e.key >= '1' && e.key <= '9') {
                     setGuess(e.key);
+                    playSound('click');
                 } else if (e.key === 'Enter' && guess) {
                     handleSubmit();
                 }
@@ -130,180 +151,205 @@ const Game = () => {
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [gameState, guess]);
 
+    const maxLives = 3;
+    const remainingLives = Math.max(0, maxLives - attempts);
+
     return (
-        <div className="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-slate-50 relative">
-            <div className="max-w-4xl mx-auto">
-                {/* Game Header */}
-                <header className="mb-8 flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 sm:px-8 sm:py-4 rounded-2xl shadow-sm border border-slate-100">
+        <div className="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-slate-50 relative overflow-hidden font-sans">
+            {/* Colorful Background Decor */}
+            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float pointer-events-none" style={{ animationDelay: '2s' }}></div>
+
+            <div className="max-w-4xl mx-auto relative z-10">
+
+                {/* Header */}
+                <header className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white/80 backdrop-blur-md p-4 sm:px-6 sm:py-4 rounded-2xl shadow-sm border border-indigo-100 shadow-indigo-500/5">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-xl shadow-sm border border-indigo-100">
                             🍌
                         </div>
-                        <h2 className="text-xl font-bold text-slate-800">Banana Hunt</h2>
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Banana Hunt Dashboard</h2>
                     </div>
 
-                    <div className="flex gap-4 sm:gap-6 text-sm font-medium text-slate-600 bg-slate-50 px-6 py-2 rounded-xl border border-slate-100">
-                        <span className="flex items-center gap-2">
-                            <UserIcon className="w-4 h-4 text-slate-400" /> {user?.username}
+                    <div className="flex gap-4 sm:gap-6 text-sm font-semibold text-slate-600 bg-white px-5 py-2.5 rounded-xl border border-indigo-50 shadow-sm">
+                        <span className="flex items-center gap-2 hover:text-indigo-600 transition-colors cursor-default">
+                            <UserIcon className="w-4 h-4 text-indigo-400" /> {user?.username}
                         </span>
-                        <span className="flex items-center gap-2">
-                            <Trophy className="w-4 h-4 text-yellow-500" /> Won: {user?.stats?.gamesWon || 0}
+                        <span className="hidden sm:flex items-center gap-2 hover:text-emerald-600 transition-colors cursor-default">
+                            <Trophy className="w-4 h-4 text-emerald-500" /> {user?.stats?.gamesWon || 0} Wins
                         </span>
-                        <span className="flex items-center gap-2">
-                            <Crown className="w-4 h-4 text-emerald-500" /> Best Streak: {user?.stats?.bestStreak || 0}
+                        <span className="flex items-center gap-2 hover:text-orange-600 transition-colors cursor-default">
+                            <Crown className="w-4 h-4 text-orange-500" /> Max Streak: {user?.stats?.bestStreak || 0}
                         </span>
                     </div>
                 </header>
 
-                {/* Main Game Area */}
-                <div className="glass-card overflow-hidden relative min-h-[500px] flex flex-col items-center justify-center p-8 border border-white/40">
+                <div className="w-full relative min-h-[500px] flex flex-col items-center justify-center p-2 sm:p-0">
                     <AnimatePresence mode="wait">
 
-                        {/* IDLE STATE */}
+                        {/* IDLE */}
                         {gameState === 'idle' && (
                             <motion.div
                                 key="idle"
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 1.1 }}
-                                className="text-center w-full max-w-md"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.98 }}
+                                className="text-center w-full max-w-lg bg-white/90 backdrop-blur-sm p-10 rounded-3xl border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
                             >
-                                <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-3xl flex items-center justify-center shadow-lg transform rotate-3">
-                                    <span className="text-5xl drop-shadow-md">👀</span>
+                                <div className="w-20 h-20 mx-auto mb-6 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100 shadow-inner">
+                                    <span className="text-4xl">🍌</span>
                                 </div>
-                                <h3 className="text-3xl font-extrabold text-slate-800 mb-4">Ready to Hunt?</h3>
-                                <p className="text-lg text-slate-500 mb-8">
-                                    You have 60 seconds and 3 attempts to count all the bananas in the image perfectly.
+                                <h3 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Ready to focus?</h3>
+                                <p className="text-base font-medium text-slate-500 mb-8 leading-relaxed">
+                                    You have 60 seconds and 3 attempts per round. Count the bananas correctly to build your streak.
                                 </p>
-                                <button className="btn-primary w-full text-lg py-4" onClick={startGame}>
-                                    <Play className="w-5 h-5 mr-2" /> Start Now
+                                <button className="btn-gradient w-full py-4 text-lg font-bold flex items-center justify-center gap-2" onClick={startGame}>
+                                    <Play className="w-5 h-5 fill-current" /> Start Session
                                 </button>
                             </motion.div>
                         )}
 
-                        {/* LOADING STATE */}
+                        {/* LOADING */}
                         {gameState === 'loading' && (
                             <motion.div
                                 key="loading"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="text-center"
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                className="text-center bg-white/90 backdrop-blur-sm p-10 rounded-3xl border border-indigo-100 shadow-lg w-full max-w-sm"
                             >
-                                <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mx-auto mb-4" />
-                                <p className="text-lg font-medium text-slate-600">{message}</p>
+                                <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mx-auto mb-4" />
+                                <p className="font-bold text-slate-600">{message}</p>
                             </motion.div>
                         )}
 
-                        {/* GAMEPLAY / RESULT STATES */}
+                        {/* PLAYING / RESULTS */}
                         {(gameState === 'playing' || gameState === 'won' || gameState === 'lost') && (
                             <motion.div
                                 key="game"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="w-full h-full flex flex-col pt-4"
+                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                                className="w-full flex flex-col gap-6"
                             >
-                                {/* Info Bar */}
-                                <div className="flex justify-between items-center mb-6 px-2">
-                                    <Timer timeLeft={timeLeft} />
-                                    <div className="flex gap-2">
-                                        {[1, 2, 3].map(i => (
-                                            <div
-                                                key={i}
-                                                className={`w-3 h-3 rounded-full ${i <= (3 - attempts) ? 'bg-emerald-500' : 'bg-slate-200'} transition-colors duration-300`}
-                                            />
-                                        ))}
+                                {/* Dashboard Top Stats */}
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-2">
+                                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-indigo-100 flex items-center justify-center shadow-sm shadow-indigo-500/5">
+                                        <Timer timeLeft={timeLeft} maxTime={maxTime} />
+                                    </div>
+
+                                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-indigo-100 flex flex-col items-center justify-center shadow-sm shadow-indigo-500/5">
+                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1.5">Attempts Left</div>
+                                        <div className="flex gap-1.5">
+                                            {Array.from({ length: maxLives }).map((_, i) => (
+                                                <div key={i}>
+                                                    <Heart className={`w-5 h-5 ${i < remainingLives ? 'text-rose-500 fill-rose-500 filter drop-shadow-[0_2px_4px_rgba(244,63,94,0.4)]' : 'text-slate-200'}`} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="col-span-2 md:col-span-1 bg-white rounded-2xl p-4 sm:p-5 border border-indigo-100 flex flex-col items-center justify-center shadow-sm shadow-indigo-500/5">
+                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">
+                                            {gameState === 'playing' ? 'Potential Score' : 'Final Score'}
+                                        </div>
+                                        <div className="text-3xl font-black tracking-tight text-slate-900 tabular-nums">
+                                            {gameState === 'playing' ? currentPotentialScore : score}
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Main Interaction Area */}
-                                <div className="flex-1 flex flex-col lg:flex-row gap-8 items-center">
-
-                                    {/* Image Container */}
-                                    <div className="w-full lg:w-3/5 bg-slate-100 rounded-3xl shadow-inner border border-slate-200 overflow-hidden relative min-h-[300px] flex items-center justify-center">
+                                {/* Main Area */}
+                                <div className="flex flex-col md:flex-row gap-6 h-full">
+                                    {/* Left: Image Container */}
+                                    <div className="flex-1 bg-white rounded-3xl shadow-sm border border-indigo-100 overflow-hidden relative min-h-[300px] md:min-h-[400px] flex items-center justify-center p-6 group">
                                         {gameData?.question ? (
-                                            <img
+                                            <motion.img
+                                                key={gameData.question}
+                                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                                                 src={gameData.question}
                                                 alt="Banana puzzle"
-                                                className="w-full h-auto object-cover max-h-[500px]"
-                                                onError={(e) => {
-                                                    // Set a modern fallback
-                                                    e.target.style.display = 'none';
-                                                    e.target.nextSibling.style.display = 'flex';
-                                                }}
+                                                className="w-full h-full object-contain max-h-[350px] transition-transform duration-500"
                                             />
                                         ) : (
-                                            <Loader2 className="w-10 h-10 text-slate-400 animate-spin" />
+                                            <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
                                         )}
-                                        {/* Fallback container */}
-                                        <div className="hidden absolute inset-0 bg-slate-200 items-center justify-center flex-col text-slate-500">
-                                            <span className="text-4xl mb-2">🍌</span>
-                                            <p>Image broken. Let's pretend there are a few here.</p>
-                                        </div>
                                     </div>
 
-                                    {/* Action Panel */}
-                                    <div className="w-full lg:w-2/5 flex flex-col justify-center space-y-6">
-                                        <div className="text-center lg:text-left">
-                                            <h3 className="text-2xl font-bold text-slate-800 mb-2">Your Guess</h3>
-                                            <p className="text-slate-500">Pick a number between 1 and 9.</p>
-                                        </div>
-
+                                    {/* Right: Interaction Panel */}
+                                    <div className="w-full md:w-[320px] shrink-0">
                                         {gameState === 'playing' && (
-                                            <form onSubmit={handleSubmit} className="flex flex-col gap-4 relative">
-                                                <input
-                                                    type="text"
-                                                    value={guess}
-                                                    onChange={handleInputChange}
-                                                    placeholder="0"
-                                                    className="w-full text-center text-5xl font-extrabold h-24 bg-white border-2 border-indigo-100 rounded-2xl text-indigo-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-200"
-                                                    maxLength="1"
-                                                    disabled={gameState !== 'playing'}
-                                                    autoFocus
-                                                />
-                                                <button
-                                                    type="submit"
-                                                    disabled={!guess}
-                                                    className="btn-primary w-full py-4 text-lg"
-                                                >
-                                                    Submit Answer
-                                                </button>
-                                            </form>
-                                        )}
+                                            <motion.div
+                                                className="bg-white p-6 rounded-3xl border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col h-full"
+                                                animate={shakeCount > 0 ? { x: [-5, 5, -5, 5, 0] } : {}}
+                                                transition={{ duration: 0.3 }}
+                                                key={`panel-${shakeCount}`}
+                                            >
+                                                <div className="text-center mb-6 mt-4">
+                                                    <h3 className="text-xl font-black text-slate-900">Your Answer</h3>
+                                                    <p className="text-slate-500 text-sm mt-1 font-medium">Press 1-9 to guess</p>
+                                                </div>
 
-                                        <AnimatePresence>
-                                            {hint && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, height: 0 }}
-                                                    animate={{ opacity: 1, height: 'auto' }}
-                                                    exit={{ opacity: 0, height: 0 }}
-                                                    className="bg-amber-50 text-amber-700 p-4 rounded-xl border border-amber-200 flex items-start gap-3"
-                                                >
-                                                    <Lightbulb className="w-5 h-5 shrink-0 text-amber-500" />
-                                                    <p className="font-medium text-sm">{hint}</p>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
+                                                <form onSubmit={handleSubmit} className="flex flex-col gap-4 flex-1 justify-center">
+                                                    <input
+                                                        type="text"
+                                                        value={guess}
+                                                        onChange={handleInputChange}
+                                                        placeholder="?"
+                                                        className="w-full text-center text-6xl font-black h-32 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-300 block mb-4 shadow-inner"
+                                                        maxLength="1"
+                                                        autoFocus
+                                                    />
+                                                    <button type="submit" disabled={!guess} className="btn-gradient py-3.5 text-base w-full shadow-lg shadow-indigo-500/20">
+                                                        Submit Guess
+                                                    </button>
+                                                </form>
+
+                                                <AnimatePresence>
+                                                    {hint && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                                                            className="mt-4 bg-orange-50 text-orange-700 p-3 rounded-xl border border-orange-100 flex items-center gap-2 text-sm font-medium"
+                                                        >
+                                                            <Lightbulb className="w-4 h-4 shrink-0 text-orange-500" />
+                                                            {hint}
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </motion.div>
+                                        )}
 
                                         {(gameState === 'won' || gameState === 'lost') && (
                                             <motion.div
-                                                initial={{ opacity: 0, scale: 0.95 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                className={`p-6 rounded-2xl border text-center ${gameState === 'won'
-                                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                                                        : 'bg-rose-50 border-rose-200 text-rose-800'
-                                                    }`}
+                                                initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
+                                                className="bg-white p-6 rounded-3xl border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col h-full items-center justify-center text-center"
                                             >
-                                                <div className="flex justify-center mb-3">
-                                                    {gameState === 'won' ? <Trophy className="w-8 h-8 text-emerald-500" /> : <XCircle className="w-8 h-8 text-rose-500" />}
+                                                <div className="mb-4">
+                                                    {gameState === 'won'
+                                                        ? <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner"><Trophy className="w-8 h-8" /></div>
+                                                        : <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner"><XCircle className="w-8 h-8" /></div>}
                                                 </div>
-                                                <h4 className="text-xl font-bold mb-2">{gameState === 'won' ? 'You Won!' : 'Game Over'}</h4>
-                                                <p className="font-medium mb-6 opacity-90">{message}</p>
 
-                                                <button onClick={startGame} className={`w-full py-3 font-semibold rounded-xl text-white shadow-sm transition-all hover:shadow-md active:scale-95 ${gameState === 'won' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-rose-500 hover:bg-rose-600'
-                                                    }`}>
-                                                    Play Again
-                                                </button>
+                                                <h4 className="text-xl font-black text-slate-900 mb-2 tracking-tight">
+                                                    {gameState === 'won' ? 'Great job!' : 'Round Over'}
+                                                </h4>
+
+                                                <p className="text-sm font-semibold text-slate-500 mb-6 px-2">{message}</p>
+
+                                                <div className="grid grid-cols-2 gap-3 w-full mb-6">
+                                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Time</div>
+                                                        <div className="text-lg font-black text-slate-900">{timeTaken}s</div>
+                                                    </div>
+                                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Score</div>
+                                                        <div className="text-lg font-black text-slate-900">{score}</div>
+                                                    </div>
+                                                </div>
+
+                                                {gameState === 'lost' ? (
+                                                    <button onClick={startGame} className="btn-gradient w-full py-3 shadow-lg shadow-indigo-500/20">Play Again</button>
+                                                ) : (
+                                                    <div className="w-full flex items-center justify-center gap-2 text-sm font-bold text-emerald-600 bg-emerald-50 py-3 rounded-xl border border-emerald-100">
+                                                        <Loader2 className="w-4 h-4 animate-spin" /> Loading next...
+                                                    </div>
+                                                )}
                                             </motion.div>
                                         )}
                                     </div>

@@ -1,6 +1,5 @@
 /**
  * PostgreSQL Database Configuration
- * Replaces MongoDB with PostgreSQL
  */
 
 const { Pool } = require('pg');
