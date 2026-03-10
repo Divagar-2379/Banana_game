@@ -75,7 +75,7 @@ exports.startGame = async (req, res) => {
         const gameData = response.data;
 
         // Validate external API response
-        if (!gameData || !gameData.question || !gameData.solution) {
+        if (!gameData || !gameData.question || gameData.solution === undefined || gameData.solution === null) {
             throw new Error('Invalid response from external API');
         }
 

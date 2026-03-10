@@ -155,31 +155,31 @@ const Game = () => {
     const remainingLives = Math.max(0, maxLives - attempts);
 
     return (
-        <div className="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-slate-50 relative overflow-hidden font-sans">
+        <div className="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 relative overflow-hidden font-sans transition-colors duration-300">
             {/* Colorful Background Decor */}
-            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float pointer-events-none"></div>
-            <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float pointer-events-none" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-indigo-500 dark:bg-indigo-900/40 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-50 animate-float pointer-events-none transition-colors duration-500"></div>
+            <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-96 h-96 bg-purple-500 dark:bg-purple-900/40 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-50 animate-float pointer-events-none transition-colors duration-500" style={{ animationDelay: '2s' }}></div>
 
-            <div className="max-w-4xl mx-auto relative z-10">
+            <div className="max-w-4xl mx-auto relative z-10 w-full transition-colors duration-300">
 
                 {/* Header */}
-                <header className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white/80 backdrop-blur-md p-4 sm:px-6 sm:py-4 rounded-2xl shadow-sm border border-indigo-100 shadow-indigo-500/5">
+                <header className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-4 sm:px-6 sm:py-4 rounded-2xl shadow-sm border border-indigo-100 dark:border-slate-700 shadow-indigo-500/5 transition-colors">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-xl shadow-sm border border-indigo-100">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-slate-700 flex items-center justify-center text-xl shadow-sm border border-indigo-100 dark:border-slate-600 transition-colors">
                             🍌
                         </div>
-                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Banana Hunt Dashboard</h2>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight transition-colors">Banana Hunt Dashboard</h2>
                     </div>
 
-                    <div className="flex gap-4 sm:gap-6 text-sm font-semibold text-slate-600 bg-white px-5 py-2.5 rounded-xl border border-indigo-50 shadow-sm">
-                        <span className="flex items-center gap-2 hover:text-indigo-600 transition-colors cursor-default">
-                            <UserIcon className="w-4 h-4 text-indigo-400" /> {user?.username}
+                    <div className="flex gap-4 sm:gap-6 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800/50 px-5 py-2.5 rounded-xl border border-indigo-50 dark:border-slate-700 shadow-sm transition-colors">
+                        <span className="flex items-center gap-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-default">
+                            <UserIcon className="w-4 h-4 text-indigo-400 dark:text-indigo-500" /> {user?.username}
                         </span>
-                        <span className="hidden sm:flex items-center gap-2 hover:text-emerald-600 transition-colors cursor-default">
-                            <Trophy className="w-4 h-4 text-emerald-500" /> {user?.stats?.gamesWon || 0} Wins
+                        <span className="hidden sm:flex items-center gap-2 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-default">
+                            <Trophy className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> {user?.stats?.gamesWon || 0} Wins
                         </span>
-                        <span className="flex items-center gap-2 hover:text-orange-600 transition-colors cursor-default">
-                            <Crown className="w-4 h-4 text-orange-500" /> Max Streak: {user?.stats?.bestStreak || 0}
+                        <span className="flex items-center gap-2 hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-default">
+                            <Crown className="w-4 h-4 text-orange-500 dark:text-orange-400" /> Max Streak: {user?.stats?.bestStreak || 0}
                         </span>
                     </div>
                 </header>
@@ -194,13 +194,13 @@ const Game = () => {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.98 }}
-                                className="text-center w-full max-w-lg bg-white/90 backdrop-blur-sm p-10 rounded-3xl border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
+                                className="text-center w-full max-w-lg bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-10 rounded-3xl border border-indigo-100 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-colors"
                             >
-                                <div className="w-20 h-20 mx-auto mb-6 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100 shadow-inner">
+                                <div className="w-20 h-20 mx-auto mb-6 bg-indigo-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center border border-indigo-100 dark:border-slate-600 shadow-inner transition-colors">
                                     <span className="text-4xl">🍌</span>
                                 </div>
-                                <h3 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Ready to focus?</h3>
-                                <p className="text-base font-medium text-slate-500 mb-8 leading-relaxed">
+                                <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-3 tracking-tight transition-colors">Ready to focus?</h3>
+                                <p className="text-base font-medium text-slate-500 dark:text-slate-400 mb-8 leading-relaxed transition-colors">
                                     You have 60 seconds and 3 attempts per round. Count the bananas correctly to build your streak.
                                 </p>
                                 <button className="btn-gradient w-full py-4 text-lg font-bold flex items-center justify-center gap-2" onClick={startGame}>
@@ -214,10 +214,10 @@ const Game = () => {
                             <motion.div
                                 key="loading"
                                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                className="text-center bg-white/90 backdrop-blur-sm p-10 rounded-3xl border border-indigo-100 shadow-lg w-full max-w-sm"
+                                className="text-center bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-10 rounded-3xl border border-indigo-100 dark:border-slate-700 shadow-lg w-full max-w-sm transition-colors"
                             >
-                                <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mx-auto mb-4" />
-                                <p className="font-bold text-slate-600">{message}</p>
+                                <Loader2 className="w-10 h-10 text-indigo-600 dark:text-indigo-400 animate-spin mx-auto mb-4" />
+                                <p className="font-bold text-slate-600 dark:text-slate-300 transition-colors">{message}</p>
                             </motion.div>
                         )}
 
@@ -230,26 +230,26 @@ const Game = () => {
                             >
                                 {/* Dashboard Top Stats */}
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-2">
-                                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-indigo-100 flex items-center justify-center shadow-sm shadow-indigo-500/5">
+                                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 border border-indigo-100 dark:border-slate-700 flex items-center justify-center shadow-sm shadow-indigo-500/5 transition-colors">
                                         <Timer timeLeft={timeLeft} maxTime={maxTime} />
                                     </div>
 
-                                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-indigo-100 flex flex-col items-center justify-center shadow-sm shadow-indigo-500/5">
-                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1.5">Attempts Left</div>
+                                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 border border-indigo-100 dark:border-slate-700 flex flex-col items-center justify-center shadow-sm shadow-indigo-500/5 transition-colors">
+                                        <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mb-1.5 transition-colors">Attempts Left</div>
                                         <div className="flex gap-1.5">
                                             {Array.from({ length: maxLives }).map((_, i) => (
                                                 <div key={i}>
-                                                    <Heart className={`w-5 h-5 ${i < remainingLives ? 'text-rose-500 fill-rose-500 filter drop-shadow-[0_2px_4px_rgba(244,63,94,0.4)]' : 'text-slate-200'}`} />
+                                                    <Heart className={`w-5 h-5 transition-colors ${i < remainingLives ? 'text-rose-500 fill-rose-500 filter drop-shadow-[0_2px_4px_rgba(244,63,94,0.4)]' : 'text-slate-200 dark:text-slate-600'}`} />
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <div className="col-span-2 md:col-span-1 bg-white rounded-2xl p-4 sm:p-5 border border-indigo-100 flex flex-col items-center justify-center shadow-sm shadow-indigo-500/5">
-                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">
+                                    <div className="col-span-2 md:col-span-1 bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 border border-indigo-100 dark:border-slate-700 flex flex-col items-center justify-center shadow-sm shadow-indigo-500/5 transition-colors">
+                                        <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mb-1 transition-colors">
                                             {gameState === 'playing' ? 'Potential Score' : 'Final Score'}
                                         </div>
-                                        <div className="text-3xl font-black tracking-tight text-slate-900 tabular-nums">
+                                        <div className="text-3xl font-black tracking-tight text-slate-900 dark:text-white tabular-nums transition-colors">
                                             {gameState === 'playing' ? currentPotentialScore : score}
                                         </div>
                                     </div>
@@ -258,7 +258,7 @@ const Game = () => {
                                 {/* Main Area */}
                                 <div className="flex flex-col md:flex-row gap-6 h-full">
                                     {/* Left: Image Container */}
-                                    <div className="flex-1 bg-white rounded-3xl shadow-sm border border-indigo-100 overflow-hidden relative min-h-[300px] md:min-h-[400px] flex items-center justify-center p-6 group">
+                                    <div className="flex-1 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-indigo-100 dark:border-slate-700 overflow-hidden relative min-h-[300px] md:min-h-[400px] flex items-center justify-center p-6 group transition-colors">
                                         {gameData?.question ? (
                                             <motion.img
                                                 key={gameData.question}
@@ -268,7 +268,7 @@ const Game = () => {
                                                 className="w-full h-full object-contain max-h-[350px] transition-transform duration-500"
                                             />
                                         ) : (
-                                            <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+                                            <Loader2 className="w-8 h-8 text-indigo-400 dark:text-indigo-500 animate-spin" />
                                         )}
                                     </div>
 
@@ -276,14 +276,14 @@ const Game = () => {
                                     <div className="w-full md:w-[320px] shrink-0">
                                         {gameState === 'playing' && (
                                             <motion.div
-                                                className="bg-white p-6 rounded-3xl border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col h-full"
+                                                className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-indigo-100 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col h-full transition-colors"
                                                 animate={shakeCount > 0 ? { x: [-5, 5, -5, 5, 0] } : {}}
                                                 transition={{ duration: 0.3 }}
                                                 key={`panel-${shakeCount}`}
                                             >
                                                 <div className="text-center mb-6 mt-4">
-                                                    <h3 className="text-xl font-black text-slate-900">Your Answer</h3>
-                                                    <p className="text-slate-500 text-sm mt-1 font-medium">Press 1-9 to guess</p>
+                                                    <h3 className="text-xl font-black text-slate-900 dark:text-white transition-colors">Your Answer</h3>
+                                                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium transition-colors">Press 1-9 to guess</p>
                                                 </div>
 
                                                 <form onSubmit={handleSubmit} className="flex flex-col gap-4 flex-1 justify-center">
@@ -292,7 +292,7 @@ const Game = () => {
                                                         value={guess}
                                                         onChange={handleInputChange}
                                                         placeholder="?"
-                                                        className="w-full text-center text-6xl font-black h-32 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-300 block mb-4 shadow-inner"
+                                                        className="w-full text-center text-6xl font-black h-32 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 block mb-4 shadow-inner"
                                                         maxLength="1"
                                                         autoFocus
                                                     />
@@ -305,9 +305,9 @@ const Game = () => {
                                                     {hint && (
                                                         <motion.div
                                                             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                                                            className="mt-4 bg-orange-50 text-orange-700 p-3 rounded-xl border border-orange-100 flex items-center gap-2 text-sm font-medium"
+                                                            className="mt-4 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 p-3 rounded-xl border border-orange-100 dark:border-orange-800/50 flex items-center gap-2 text-sm font-medium transition-colors"
                                                         >
-                                                            <Lightbulb className="w-4 h-4 shrink-0 text-orange-500" />
+                                                            <Lightbulb className="w-4 h-4 shrink-0 text-orange-500 dark:text-orange-400" />
                                                             {hint}
                                                         </motion.div>
                                                     )}
@@ -318,35 +318,35 @@ const Game = () => {
                                         {(gameState === 'won' || gameState === 'lost') && (
                                             <motion.div
                                                 initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
-                                                className="bg-white p-6 rounded-3xl border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col h-full items-center justify-center text-center"
+                                                className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-indigo-100 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col h-full items-center justify-center text-center transition-colors"
                                             >
                                                 <div className="mb-4">
                                                     {gameState === 'won'
-                                                        ? <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner"><Trophy className="w-8 h-8" /></div>
-                                                        : <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner"><XCircle className="w-8 h-8" /></div>}
+                                                        ? <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner transition-colors"><Trophy className="w-8 h-8" /></div>
+                                                        : <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner transition-colors"><XCircle className="w-8 h-8" /></div>}
                                                 </div>
 
-                                                <h4 className="text-xl font-black text-slate-900 mb-2 tracking-tight">
+                                                <h4 className="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight transition-colors">
                                                     {gameState === 'won' ? 'Great job!' : 'Round Over'}
                                                 </h4>
 
-                                                <p className="text-sm font-semibold text-slate-500 mb-6 px-2">{message}</p>
+                                                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-6 px-2 transition-colors">{message}</p>
 
                                                 <div className="grid grid-cols-2 gap-3 w-full mb-6">
-                                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Time</div>
-                                                        <div className="text-lg font-black text-slate-900">{timeTaken}s</div>
+                                                    <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700 transition-colors">
+                                                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Time</div>
+                                                        <div className="text-lg font-black text-slate-900 dark:text-slate-100 transition-colors">{timeTaken}s</div>
                                                     </div>
-                                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Score</div>
-                                                        <div className="text-lg font-black text-slate-900">{score}</div>
+                                                    <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700 transition-colors">
+                                                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Score</div>
+                                                        <div className="text-lg font-black text-slate-900 dark:text-slate-100 transition-colors">{score}</div>
                                                     </div>
                                                 </div>
 
                                                 {gameState === 'lost' ? (
                                                     <button onClick={startGame} className="btn-gradient w-full py-3 shadow-lg shadow-indigo-500/20">Play Again</button>
                                                 ) : (
-                                                    <div className="w-full flex items-center justify-center gap-2 text-sm font-bold text-emerald-600 bg-emerald-50 py-3 rounded-xl border border-emerald-100">
+                                                    <div className="w-full flex items-center justify-center gap-2 text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 py-3 rounded-xl border border-emerald-100 dark:border-emerald-800/50 transition-colors">
                                                         <Loader2 className="w-4 h-4 animate-spin" /> Loading next...
                                                     </div>
                                                 )}

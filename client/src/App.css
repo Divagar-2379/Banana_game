@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 antialiased selection:bg-indigo-500 selection:text-white;
+    @apply bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white antialiased selection:bg-indigo-500 selection:text-white transition-colors duration-300;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 }
@@ -13,32 +13,32 @@
 
   /* Common glassmorphism container */
   .glass-card {
-    @apply bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0, 0, 0, 0.08)] rounded-2xl;
+    @apply bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/60 dark:border-slate-700 shadow-[0_8px_30px_rgb(0, 0, 0, 0.08)] rounded-2xl transition-colors;
   }
 
   /* Primary Button */
   .btn-primary {
-    @apply relative inline-flex items-center justify-center px-6 py-2.5 font-semibold text-white transition-all duration-300 ease-out bg-indigo-600 rounded-xl hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/30 active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none;
+    @apply relative inline-flex items-center justify-center px-6 py-2.5 font-semibold text-white transition-all duration-300 ease-out bg-indigo-600 dark:bg-indigo-500 rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-400 hover:shadow-lg hover:shadow-indigo-500/30 active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none;
   }
 
   /* Gradient Button */
   .btn-gradient {
-    @apply relative inline-flex items-center justify-center px-6 py-2.5 font-semibold text-white transition-all duration-300 ease-out bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl hover:from-indigo-600 hover:to-purple-700 shadow-md hover:shadow-lg hover:shadow-indigo-500/30 active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none;
+    @apply relative inline-flex items-center justify-center px-6 py-2.5 font-semibold text-white transition-all duration-300 ease-out bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-400 dark:to-purple-500 rounded-xl hover:from-indigo-600 hover:to-purple-700 dark:hover:from-indigo-500 dark:hover:to-purple-600 shadow-md hover:shadow-lg hover:shadow-indigo-500/30 active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none;
   }
 
   /* Secondary Button */
   .btn-secondary {
-    @apply relative inline-flex items-center justify-center px-6 py-2.5 font-semibold text-indigo-600 transition-all duration-300 ease-out bg-indigo-50 border border-indigo-100 shadow-sm rounded-xl hover:bg-indigo-100 hover:border-indigo-200 active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none;
+    @apply relative inline-flex items-center justify-center px-6 py-2.5 font-semibold text-indigo-600 dark:text-indigo-400 transition-all duration-300 ease-out bg-indigo-50 dark:bg-slate-800 border border-indigo-100 dark:border-slate-700 shadow-sm rounded-xl hover:bg-indigo-100 dark:hover:bg-slate-700 hover:border-indigo-200 dark:hover:border-slate-600 active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none;
   }
 
   /* Outline Button */
   .btn-outline {
-    @apply relative inline-flex items-center justify-center px-4 py-2 font-semibold text-slate-700 transition-all duration-300 ease-out border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 hover:text-indigo-600 active:scale-[0.98];
+    @apply relative inline-flex items-center justify-center px-4 py-2 font-semibold text-slate-700 dark:text-slate-300 transition-all duration-300 ease-out border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 active:scale-[0.98];
   }
 
   /* Form Inputs */
   .input-field {
-    @apply w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 text-sm font-medium text-slate-900 shadow-sm;
+    @apply w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm font-medium text-slate-900 dark:text-white shadow-sm hover:border-slate-300 dark:hover:border-slate-600;
   }
 }
 

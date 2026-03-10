@@ -10,13 +10,13 @@ const FeatureCard = ({ icon: Icon, title, description, delay }) => (
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay }}
         viewport={{ once: true }}
-        className="group relative p-8 bg-white rounded-2xl border border-indigo-100 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300"
+        className="group relative p-8 bg-white dark:bg-slate-800 rounded-2xl border border-indigo-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 dark:hover:shadow-indigo-500/5 transition-all duration-300"
     >
-        <div className="w-12 h-12 mb-6 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-105 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+        <div className="w-12 h-12 mb-6 rounded-xl bg-indigo-50 dark:bg-slate-700 border border-indigo-100 dark:border-slate-600 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-105 group-hover:bg-indigo-600 dark:group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300">
             <Icon className="w-5 h-5" />
         </div>
-        <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
-        <p className="text-slate-500 font-medium leading-relaxed text-sm">{description}</p>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 transition-colors">{title}</h3>
+        <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed text-sm transition-colors">{description}</p>
     </motion.div>
 );
 
@@ -24,11 +24,11 @@ const Home = () => {
     const { isAuthenticated } = useAuth();
 
     return (
-        <div className="min-h-screen pt-24 pb-20 flex flex-col items-center justify-center overflow-hidden bg-slate-50 relative">
+        <div className="min-h-screen pt-24 pb-20 flex flex-col items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-900 relative transition-colors duration-300">
             {/* Colorful Background Decor */}
-            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float"></div>
-            <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
-            <div className="absolute top-1/2 left-1/2 -ml-48 -mt-48 w-96 h-96 bg-rose-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float" style={{ animationDelay: '4s' }}></div>
+            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-indigo-500 dark:bg-indigo-900/30 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-40 animate-float transition-all duration-500"></div>
+            <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-96 h-96 bg-purple-500 dark:bg-purple-900/30 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-40 animate-float transition-all duration-500" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute top-1/2 left-1/2 -ml-48 -mt-48 w-96 h-96 bg-rose-400 dark:bg-indigo-800/30 rounded-full mix-blend-multiply filter blur-3xl opacity-10 dark:opacity-30 animate-float transition-all duration-500" style={{ animationDelay: '4s' }}></div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex flex-col items-center w-full relative z-10">
 
@@ -39,22 +39,22 @@ const Home = () => {
                     transition={{ duration: 0.6 }}
                     className="text-center max-w-4xl mx-auto space-y-8"
                 >
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-indigo-100 text-indigo-600 font-bold text-xs shadow-sm shadow-indigo-500/5 mb-2">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-slate-800 border border-indigo-100 dark:border-slate-700 text-indigo-600 dark:text-indigo-400 font-bold text-xs shadow-sm shadow-indigo-500/5 mb-2 transition-colors">
                         <span className="relative flex h-2.5 w-2.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 dark:bg-indigo-500 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500 dark:bg-indigo-400"></span>
                         </span>
                         v2.0 Beta Now Available
                     </div>
 
-                    <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-slate-900 tracking-tight leading-[1.1]">
+                    <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.1] transition-colors">
                         Master your focus.<br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
                             Hunt the Bananas.
                         </span>
                     </h1>
 
-                    <p className="text-lg sm:text-xl font-medium text-slate-500 max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-lg sm:text-xl font-medium text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed transition-colors">
                         A modern cognitive training tool disguised as a delightful game. Count quickly, react faster, and climb the global leaderboards.
                     </p>
 
@@ -83,7 +83,7 @@ const Home = () => {
                                 <Link to="/login">
                                     <motion.button
                                         whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                                        className="btn-secondary text-lg px-10 py-4 w-full sm:w-auto"
+                                        className="btn-secondary dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700 text-lg px-10 py-4 w-full sm:w-auto transition-colors"
                                     >
                                         Sign In
                                     </motion.button>
@@ -115,23 +115,6 @@ const Home = () => {
                     />
                 </div>
 
-                {/* Proof Section */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    className="mt-32 w-full max-w-4xl text-center flex flex-col items-center"
-                >
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-8">Powered by modern web technologies</p>
-                    <div className="flex flex-wrap justify-center items-center gap-8 gap-y-6 opacity-80">
-                        {['MongoDB', 'Express', 'React', 'Node.js', 'Tailwind CSS'].map((tech) => (
-                            <span key={tech} className="text-lg font-bold text-slate-700 tracking-tight flex items-center gap-2 hover:text-indigo-600 transition-colors cursor-default">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                                {tech}
-                            </span>
-                        ))}
-                    </div>
-                </motion.div>
             </div>
         </div>
     );

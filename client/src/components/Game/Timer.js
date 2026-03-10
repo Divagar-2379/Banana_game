@@ -29,7 +29,7 @@ const Timer = ({ timeLeft, maxTime = 60 }) => {
                 <span className="tabular-nums">00:{timeLeft.toString().padStart(2, '0')}</span>
             </motion.div>
 
-            <div className="flex-1 hidden sm:block h-2 bg-indigo-50 rounded-full overflow-hidden shadow-inner">
+            <div className="flex-1 hidden sm:block h-2 bg-indigo-50 dark:bg-slate-700 rounded-full overflow-hidden shadow-inner">
                 <motion.div
                     className={`h-full rounded-full ${progressColor}`}
                     initial={{ width: '100%' }}
