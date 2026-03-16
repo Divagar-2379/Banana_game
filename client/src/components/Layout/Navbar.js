@@ -19,6 +19,10 @@ const Navbar = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password') {
+        return null;
+    }
+
     const handleLogout = async () => {
         await logout();
         navigate('/login');

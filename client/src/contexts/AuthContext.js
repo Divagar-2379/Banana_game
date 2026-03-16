@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             const response = await api.post('/auth/login', { email, password });
+            
             const { token, user } = response.data;
 
             // Store token
@@ -55,6 +56,44 @@ export const AuthProvider = ({ children }) => {
                 success: false,
                 message: error.response?.data?.message || 'Login failed'
             };
+        }
+    };
+
+    const verifyOtp = async (email, otp) => {
+        try {
+            const response = await api.post('/auth/verify-otp', { email, otp });
+            const { token, user } = response.data;
+
+            localStorage.setItem('token', token);
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+            setUser(user);
+            setIsAuthenticated(true);
+
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Invalid OTP'
+            };
+        }
+    };
+
+    const forgotPassword = async (email) => {
+        try {
+            const response = await api.post('/auth/forgot-password', { email });
+            return { success: true, message: response.data.message };
+        } catch (error) {
+            return { success: false, message: error.response?.data?.message || 'Request failed' };
+        }
+    };
+
+    const resetPassword = async (email, otp, newPassword) => {
+        try {
+            const response = await api.post('/auth/reset-password', { email, otp, newPassword });
+            return { success: true, message: response.data.message };
+        } catch (error) {
+            return { success: false, message: error.response?.data?.message || 'Reset failed' };
         }
     };
 
@@ -105,6 +144,9 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         loading,
         login,
+        verifyOtp,
+        forgotPassword,
+        resetPassword,
         register,
         logout,
         updateUserStats

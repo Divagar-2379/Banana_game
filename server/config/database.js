@@ -85,6 +85,25 @@ const initDatabase = async () => {
       ON game_sessions(user_id)
     `);
 
+        // Create otp_verifications table (persistent OTP storage with expiry)
+        await query(`
+      CREATE TABLE IF NOT EXISTS otp_verifications (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(100) NOT NULL,
+        otp VARCHAR(6) NOT NULL,
+        type VARCHAR(20) NOT NULL,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+        // Index for fast email lookups
+        await query(`
+      CREATE INDEX IF NOT EXISTS idx_otp_email
+      ON otp_verifications(email)
+    `);
+
         console.log('✅ Database tables initialized');
     } catch (error) {
         console.error('❌ Database initialization error:', error);

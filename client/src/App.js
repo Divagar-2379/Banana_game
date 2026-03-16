@@ -11,6 +11,7 @@ import Navbar from './components/Layout/Navbar';
 import Home from './components/Layout/Home';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
+import ForgotPassword from './components/Auth/ForgotPassword';
 import Game from './components/Game/Game';
 import Profile from './components/User/Profile';
 import PrivateRoute from './components/Auth/PrivateRoute';
@@ -28,6 +29,7 @@ function App() {
                             <Route path="/" element={<Home />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/register" element={<Register />} />
+                            <Route path="/forgot-password" element={<ForgotPassword />} />
 
                             {/* Protected routes - require authentication */}
                             <Route path="/play" element={

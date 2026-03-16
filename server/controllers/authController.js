@@ -8,6 +8,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const { query } = require('../config/database');
+const { sendOTPEmail } = require('../utils/emailService');
+
+// Helper: generate a 6-digit OTP string
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -154,6 +158,167 @@ exports.login = async (req, res) => {
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ message: 'Server error during login' });
+    }
+};
+
+// Verify OTP for Login
+exports.verifyOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        const record = otpStore.get(email);
+
+        if (!record || record.type !== 'mfa' || record.otp !== otp || new Date() > record.expiresAt) {
+            return res.status(401).json({ message: 'Invalid or expired OTP' });
+        }
+
+        // OTP is valid - clear it and complete login
+        otpStore.delete(email);
+
+        // Fetch user again just to get the full profile
+        const userResult = await query('SELECT * FROM users WHERE id = $1', [record.userId]);
+        const user = userResult.rows[0];
+
+        // Update last login
+        await query(
+            'UPDATE users SET last_login = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+            [user.id]
+        );
+
+        // Generate token
+        const token = generateToken(user.id);
+
+        // Set cookie
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000
+        });
+
+        res.json({
+            success: true,
+            message: 'Login successful',
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                createdAt: user.created_at,
+                stats: {
+                    gamesPlayed: user.games_played,
+                    gamesWon: user.games_won,
+                    totalScore: user.total_score,
+                    currentStreak: user.current_streak,
+                    bestStreak: user.best_streak
+                }
+            },
+            token
+        });
+
+    } catch (error) {
+        console.error('Verify OTP error:', error);
+        res.status(500).json({ message: 'Server error during OTP verification' });
+    }
+};
+
+// Request Password Reset (stores OTP in DB, sends real email)
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const userResult = await query(
+            'SELECT * FROM users WHERE email = $1 AND is_active = true',
+            [email]
+        );
+
+        // Always return a generic message to prevent email probing
+        if (userResult.rows.length === 0) {
+            return res.json({ success: true, message: 'If that email exists, a reset code was sent.' });
+        }
+
+        const user = userResult.rows[0];
+        const otp = generateOTP();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min from now
+
+        // Remove any existing OTPs for this email/type
+        await query(
+            'DELETE FROM otp_verifications WHERE email = $1 AND type = $2',
+            [email, 'reset']
+        );
+
+        // Store new OTP in database
+        await query(
+            'INSERT INTO otp_verifications (email, otp, type, user_id, expires_at) VALUES ($1, $2, $3, $4, $5)',
+            [email, otp, 'reset', user.id, expiresAt]
+        );
+
+        // Send real email
+        await sendOTPEmail(email, otp, 'reset');
+
+        res.json({
+            success: true,
+            message: 'If that email exists, a reset code was sent.'
+        });
+
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ message: 'Failed to send reset email. Please try again.' });
+    }
+};
+
+// Complete Password Reset (validates DB OTP, updates password)
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ message: 'Email, OTP, and new password are required.' });
+        }
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+        }
+
+        // Look up OTP record in database
+        const otpResult = await query(
+            `SELECT * FROM otp_verifications
+             WHERE email = $1 AND type = 'reset'
+             ORDER BY created_at DESC LIMIT 1`,
+            [email]
+        );
+
+        if (otpResult.rows.length === 0) {
+            return res.status(401).json({ message: 'No reset code found. Please request a new one.' });
+        }
+
+        const record = otpResult.rows[0];
+
+        // Validate OTP hasn't expired
+        if (new Date() > new Date(record.expires_at)) {
+            await query('DELETE FROM otp_verifications WHERE id = $1', [record.id]);
+            return res.status(401).json({ message: 'OTP has expired. Please request a new reset code.' });
+        }
+
+        // Validate OTP matches
+        if (record.otp !== otp.toString().trim()) {
+            return res.status(401).json({ message: 'Incorrect OTP. Please try again.' });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(12);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update user's password in database
+        await query(
+            'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [hashedPassword, record.user_id]
+        );
+
+        // Clean up used OTP
+        await query('DELETE FROM otp_verifications WHERE email = $1 AND type = $2', [email, 'reset']);
+
+        res.json({ success: true, message: 'Password has been successfully reset. Please log in.' });
+
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 };
 

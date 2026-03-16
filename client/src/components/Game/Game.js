@@ -4,12 +4,15 @@ import api from '../../services/api';
 import Timer from './Timer';
 import { playSound } from '../../utils/audio';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Play, Trophy, XCircle, Lightbulb, User as UserIcon, Crown, Heart } from 'lucide-react';
+import { Loader2, Play, Trophy, XCircle, Lightbulb, User as UserIcon, Crown, Heart, Target, Infinity as InfinityIcon, Flag } from 'lucide-react';
 
 const Game = () => {
     const { user, updateUserStats } = useAuth();
 
-    const [gameState, setGameState] = useState('idle');
+    const [gameState, setGameState] = useState('mode-selection'); // mode-selection -> idle -> playing -> won/lost/completed
+    const [gameMode, setGameMode] = useState(null); // 'continuous' or 'level'
+    const [currentLevel, setCurrentLevel] = useState(1);
+    
     const [gameData, setGameData] = useState(null);
     const [guess, setGuess] = useState('');
     const [timeLeft, setTimeLeft] = useState(60);
@@ -37,6 +40,7 @@ const Game = () => {
             }, 1000);
         }
         return () => clearInterval(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [gameState, timeLeft]);
 
     const handleTimeUp = async () => {
@@ -46,17 +50,30 @@ const Game = () => {
         try { await api.post('/game/timeout', { gameId: gameData?.gameId }); } catch (e) { }
     };
 
+    const getDynamicTimeLimit = () => {
+        if (gameMode === 'level') {
+            // Difficulty increases: start at 60s, decrease by 0.5s per level, min 10s
+            return Math.max(10, Math.floor(60 - (currentLevel - 1) * 0.5));
+        }
+        return 60;
+    };
+
     const startNextLevel = async () => {
         try {
             setGameState('loading');
             setMessage('Generating next challenge...');
             setGuess('');
             setHint(null);
+            setAttempts(0);
+            
             const response = await api.post('/game/start');
             const data = response.data;
             setGameData(data);
-            setTimeLeft(data.timeLimit || 60);
-            setMaxTime(data.timeLimit || 60);
+            
+            const timeLimit = getDynamicTimeLimit();
+            setTimeLeft(timeLimit);
+            setMaxTime(timeLimit);
+            
             setGameState('playing');
             setMessage('How many bananas do you see?');
         } catch (error) {
@@ -74,11 +91,18 @@ const Game = () => {
             setHint(null);
             setAttempts(0);
             setScore(0);
+            if (gameMode === 'level' && gameState !== 'won') {
+                setCurrentLevel(1); // Reset to 1 if fully restarting
+            }
+
             const response = await api.post('/game/start');
             const data = response.data;
             setGameData(data);
-            setTimeLeft(data.timeLimit || 60);
-            setMaxTime(data.timeLimit || 60);
+            
+            const timeLimit = getDynamicTimeLimit();
+            setTimeLeft(timeLimit);
+            setMaxTime(timeLimit);
+            
             setGameState('playing');
             setMessage('How many bananas do you see?');
         } catch (error) {
@@ -108,12 +132,25 @@ const Game = () => {
             const result = response.data;
 
             if (result.correct) {
-                setGameState('won');
                 setScore(prev => prev + result.score);
-                setMessage(`Correct.`);
                 playSound('win');
                 updateUserStats(result.stats);
-                setTimeout(() => startNextLevel(), 1500);
+                
+                if (gameMode === 'level') {
+                    if (currentLevel >= 100) {
+                        setGameState('completed');
+                        setMessage(`Congratulations! You have completed all 100 levels!`);
+                    } else {
+                        setGameState('won');
+                        setMessage(`Correct! Level ${currentLevel} cleared.`);
+                        setCurrentLevel(prev => prev + 1);
+                        setTimeout(() => startNextLevel(), 1500);
+                    }
+                } else {
+                    setGameState('won');
+                    setMessage(`Correct.`);
+                    setTimeout(() => startNextLevel(), 1500);
+                }
             } else {
                 setGuess('');
                 const newAttempts = attempts + 1;
@@ -149,6 +186,7 @@ const Game = () => {
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [gameState, guess]);
 
     const maxLives = 3;
@@ -168,7 +206,9 @@ const Game = () => {
                         <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-slate-700 flex items-center justify-center text-xl shadow-sm border border-indigo-100 dark:border-slate-600 transition-colors">
                             🍌
                         </div>
-                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight transition-colors">Banana Hunt Dashboard</h2>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight transition-colors">
+                            Banana Hunt Dashboard
+                        </h2>
                     </div>
 
                     <div className="flex gap-4 sm:gap-6 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800/50 px-5 py-2.5 rounded-xl border border-indigo-50 dark:border-slate-700 shadow-sm transition-colors">
@@ -187,6 +227,45 @@ const Game = () => {
                 <div className="w-full relative min-h-[500px] flex flex-col items-center justify-center p-2 sm:p-0">
                     <AnimatePresence mode="wait">
 
+                        {/* MODE SELECTION */}
+                        {gameState === 'mode-selection' && (
+                            <motion.div
+                                key="mode-selection"
+                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
+                                className="w-full flex flex-col gap-6"
+                            >
+                                <div className="text-center mb-4">
+                                    <h2 className="text-4xl font-black text-slate-900 dark:text-white mb-3">Select Game Mode</h2>
+                                    <p className="text-slate-500 dark:text-slate-400">Choose your preferred way to play Banana Hunt.</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mx-auto">
+                                    {/* Continuous Mode */}
+                                    <button 
+                                        onClick={() => { setGameMode('continuous'); setGameState('idle'); }}
+                                        className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-8 rounded-3xl border-2 border-transparent hover:border-indigo-500 dark:hover:border-indigo-400 transition-all shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:shadow-indigo-500/20 text-left group"
+                                    >
+                                        <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/40 rounded-2xl flex items-center justify-center mb-6 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                                            <InfinityIcon className="w-8 h-8" />
+                                        </div>
+                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Continuous Mode</h3>
+                                        <p className="text-slate-500 dark:text-slate-400 font-medium">Endless gameplay! Keep answering to build up your streak and score to the absolute maximum. No limits.</p>
+                                    </button>
+
+                                    {/* Level Mode */}
+                                    <button 
+                                        onClick={() => { setGameMode('level'); setGameState('idle'); }}
+                                        className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-8 rounded-3xl border-2 border-transparent hover:border-purple-500 dark:hover:border-purple-400 transition-all shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:shadow-purple-500/20 text-left group"
+                                    >
+                                        <div className="w-14 h-14 bg-purple-50 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center mb-6 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform">
+                                            <Target className="w-8 h-8" />
+                                        </div>
+                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Level Mode</h3>
+                                        <p className="text-slate-500 dark:text-slate-400 font-medium">Beat 100 structured levels sequentially with gradually increasing difficulty. Are you up for the challenge?</p>
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+
                         {/* IDLE */}
                         {gameState === 'idle' && (
                             <motion.div
@@ -196,12 +275,17 @@ const Game = () => {
                                 exit={{ opacity: 0, scale: 0.98 }}
                                 className="text-center w-full max-w-lg bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-10 rounded-3xl border border-indigo-100 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-colors"
                             >
+                                <button onClick={() => setGameState('mode-selection')} className="absolute top-6 left-6 text-sm font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                    &larr; Back
+                                </button>
                                 <div className="w-20 h-20 mx-auto mb-6 bg-indigo-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center border border-indigo-100 dark:border-slate-600 shadow-inner transition-colors">
                                     <span className="text-4xl">🍌</span>
                                 </div>
-                                <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-3 tracking-tight transition-colors">Ready to focus?</h3>
+                                <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-3 tracking-tight transition-colors">
+                                    {gameMode === 'level' ? `Level Mode` : `Continuous Mode`}
+                                </h3>
                                 <p className="text-base font-medium text-slate-500 dark:text-slate-400 mb-8 leading-relaxed transition-colors">
-                                    You have 60 seconds and 3 attempts per round. Count the bananas correctly to build your streak.
+                                    {gameMode === 'level' ? 'Complete 100 progressively harder levels! Time limits decrease as you climb higher.' : 'You have 60 seconds and 3 attempts per round. Count the bananas correctly to build your streak.'}
                                 </p>
                                 <button className="btn-gradient w-full py-4 text-lg font-bold flex items-center justify-center gap-2" onClick={startGame}>
                                     <Play className="w-5 h-5 fill-current" /> Start Session
@@ -222,7 +306,7 @@ const Game = () => {
                         )}
 
                         {/* PLAYING / RESULTS */}
-                        {(gameState === 'playing' || gameState === 'won' || gameState === 'lost') && (
+                        {(gameState === 'playing' || gameState === 'won' || gameState === 'lost' || gameState === 'completed') && (
                             <motion.div
                                 key="game"
                                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -247,10 +331,10 @@ const Game = () => {
 
                                     <div className="col-span-2 md:col-span-1 bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 border border-indigo-100 dark:border-slate-700 flex flex-col items-center justify-center shadow-sm shadow-indigo-500/5 transition-colors">
                                         <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mb-1 transition-colors">
-                                            {gameState === 'playing' ? 'Potential Score' : 'Final Score'}
+                                            {gameMode === 'level' ? `Level Progress` : (gameState === 'playing' ? 'Potential Score' : 'Final Score')}
                                         </div>
                                         <div className="text-3xl font-black tracking-tight text-slate-900 dark:text-white tabular-nums transition-colors">
-                                            {gameState === 'playing' ? currentPotentialScore : score}
+                                            {gameMode === 'level' ? `${currentLevel} / 100` : (gameState === 'playing' ? currentPotentialScore : score)}
                                         </div>
                                     </div>
                                 </div>
@@ -315,19 +399,21 @@ const Game = () => {
                                             </motion.div>
                                         )}
 
-                                        {(gameState === 'won' || gameState === 'lost') && (
+                                        {(gameState === 'won' || gameState === 'lost' || gameState === 'completed') && (
                                             <motion.div
                                                 initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
                                                 className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-indigo-100 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col h-full items-center justify-center text-center transition-colors"
                                             >
                                                 <div className="mb-4">
-                                                    {gameState === 'won'
+                                                    {gameState === 'completed'
+                                                        ? <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner transition-colors"><Flag className="w-8 h-8" /></div>
+                                                        : gameState === 'won'
                                                         ? <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner transition-colors"><Trophy className="w-8 h-8" /></div>
                                                         : <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner transition-colors"><XCircle className="w-8 h-8" /></div>}
                                                 </div>
 
                                                 <h4 className="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight transition-colors">
-                                                    {gameState === 'won' ? 'Great job!' : 'Round Over'}
+                                                    {gameState === 'completed' ? 'Level 100 Cleared!' : (gameState === 'won' ? 'Great job!' : 'Round Over')}
                                                 </h4>
 
                                                 <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-6 px-2 transition-colors">{message}</p>
@@ -343,8 +429,11 @@ const Game = () => {
                                                     </div>
                                                 </div>
 
-                                                {gameState === 'lost' ? (
-                                                    <button onClick={startGame} className="btn-gradient w-full py-3 shadow-lg shadow-indigo-500/20">Play Again</button>
+                                                {(gameState === 'lost' || gameState === 'completed') ? (
+                                                    <div className="flex flex-col gap-2 w-full">
+                                                        <button onClick={startGame} className="btn-gradient w-full py-3 shadow-lg shadow-indigo-500/20">Play Again</button>
+                                                        <button onClick={() => setGameState('mode-selection')} className="btn-secondary w-full py-3">Change Mode</button>
+                                                    </div>
                                                 ) : (
                                                     <div className="w-full flex items-center justify-center gap-2 text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 py-3 rounded-xl border border-emerald-100 dark:border-emerald-800/50 transition-colors">
                                                         <Loader2 className="w-4 h-4 animate-spin" /> Loading next...

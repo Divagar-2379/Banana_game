@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { Play, ArrowRight, Target, Timer, Trophy, CheckCircle2 } from 'lucide-react';
+import { Play, ArrowRight, Target, Timer, Trophy } from 'lucide-react';
 
 const FeatureCard = ({ icon: Icon, title, description, delay }) => (
     <motion.div

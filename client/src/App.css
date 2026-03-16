@@ -60,3 +60,15 @@
 .animate-float {
   animation: float 8s ease-in-out infinite;
 }
+
+/* Auth pages: show image panel on large screens */
+@media (min-width: 768px) {
+  .auth-image-panel {
+    display: flex !important;
+  }
+}
+
+/* Inline input placeholder fix for dark auth bg */
+input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}

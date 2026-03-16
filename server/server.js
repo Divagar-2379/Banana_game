@@ -14,12 +14,13 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 
+// Load environment variables before any local modules
+dotenv.config();
+
 // Route imports
 const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/game');
 const { initDatabase } = require('./config/database');
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;

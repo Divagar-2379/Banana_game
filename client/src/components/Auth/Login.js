@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, AlertCircle, Command } from 'lucide-react';
 
 const Login = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -18,100 +18,311 @@ const Login = () => {
         setError('');
         setLoading(true);
         const result = await login(formData.email, formData.password);
-        if (result.success) navigate('/play');
-        else setError(result.message);
+        if (result.success) {
+            navigate('/play');
+        } else {
+            setError(result.message);
+        }
         setLoading(false);
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-900 relative overflow-hidden transition-colors duration-300">
-            {/* Colorful Background Decor */}
-            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-indigo-500 dark:bg-indigo-900/40 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-40 animate-float transition-all duration-500"></div>
-            <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-96 h-96 bg-purple-500 dark:bg-purple-900/40 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-40 animate-float transition-all duration-500" style={{ animationDelay: '2s' }}></div>
-            <div className="absolute top-1/2 left-1/2 -ml-48 -mt-48 w-96 h-96 bg-rose-400 dark:bg-rose-900/30 rounded-full mix-blend-multiply filter blur-3xl opacity-10 dark:opacity-20 animate-float transition-all duration-500" style={{ animationDelay: '4s' }}></div>
+        <div style={styles.root}>
+            {/* Animated background blobs */}
+            <div style={styles.blob1} />
+            <div style={styles.blob2} />
+            <div style={styles.blob3} />
 
-            <motion.div
-                initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="w-full max-w-sm z-10"
-            >
-                <div className="text-center mb-8 flex flex-col items-center">
-                    <div className="p-2 mb-4 bg-indigo-600 rounded-xl text-white shadow-md shadow-indigo-500/20">
-                        <Command className="w-6 h-6" />
+            {/* Right: Background Image Panel */}
+            <div style={styles.imagePanel}>
+                <img src="/auth-bg.png" alt="Banana Hunt" style={styles.bgImage} />
+                <div style={styles.imagePanelOverlay}>
+                    <div style={styles.gameBadge}>🎮 GAME OF THE YEAR</div>
+                    <h1 style={styles.heroTitle}>Hunt The<br /><span style={styles.heroAccent}>Bananas</span></h1>
+                    <p style={styles.heroDesc}>Count fast. Score high. Become the champion.</p>
+                    <div style={styles.statRow}>
+                        <div style={styles.statItem}><span style={styles.statNum}>100</span><span style={styles.statLabel}>Levels</span></div>
+                        <div style={styles.statDivider} />
+                        <div style={styles.statItem}><span style={styles.statNum}>∞</span><span style={styles.statLabel}>Endless Mode</span></div>
+                        <div style={styles.statDivider} />
+                        <div style={styles.statItem}><span style={styles.statNum}>60s</span><span style={styles.statLabel}>Per Round</span></div>
                     </div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight transition-colors">Welcome back</h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium transition-colors">Please enter your details to sign in.</p>
                 </div>
+            </div>
 
-                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-indigo-100 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-colors">
-                    <AnimatePresence>
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                                animate={{ opacity: 1, height: 'auto', marginBottom: 20 }}
-                                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                                className="bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 p-3 rounded-lg flex items-center gap-2 border border-rose-100 dark:border-rose-800/50 overflow-hidden"
-                            >
-                                <AlertCircle className="w-4 h-4 shrink-0" />
-                                <span className="text-sm font-semibold">{error}</span>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+            {/* Left: Form Panel */}
+            <div style={styles.formPanel}>
+                <div style={styles.formInner}>
+                    {/* Logo */}
+                    <div style={styles.logoRow}>
+                        <div style={styles.logoIcon}>🍌</div>
+                        <span style={styles.logoText}>Banana Hunt</span>
+                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 transition-colors">Email address</label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 hover:border-slate-300 dark:hover:border-slate-600"
-                                placeholder="name@company.com"
-                            />
+                    <div style={styles.formHeader}>
+                        <h2 style={styles.formTitle}>Welcome back</h2>
+                        <p style={styles.formSubtitle}>Sign in to continue your hunt</p>
+                    </div>
+
+                    {error && (
+                        <div style={styles.errorBox}>
+                            <span style={styles.errorIcon}>⚠</span>
+                            {error}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} style={styles.form}>
+                        <div style={styles.fieldGroup}>
+                            <label style={styles.label}>Email Address</label>
+                            <div style={styles.inputWrapper}>
+                                <span style={styles.inputIcon}>✉</span>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="you@example.com"
+                                    style={styles.input}
+                                    onFocus={e => e.target.parentNode.style.borderColor = '#f5c518'}
+                                    onBlur={e => e.target.parentNode.style.borderColor = 'rgba(255,255,255,0.1)'}
+                                />
+                            </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                            <div className="flex justify-between items-center">
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 transition-colors">Password</label>
-                                <span className="text-xs font-semibold text-indigo-500 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 cursor-pointer transition-colors">Forgot password?</span>
+                        <div style={styles.fieldGroup}>
+                            <div style={styles.labelRow}>
+                                <label style={styles.label}>Password</label>
+                                <Link to="/forgot-password" style={styles.forgotLink}>Forgot password?</Link>
                             </div>
-                            <input
-                                type="password"
-                                name="password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 hover:border-slate-300 dark:hover:border-slate-600"
-                                placeholder="••••••••"
-                            />
+                            <div style={styles.inputWrapper}>
+                                <span style={styles.inputIcon}>🔒</span>
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="••••••••••••"
+                                    style={styles.input}
+                                    onFocus={e => e.target.parentNode.style.borderColor = '#f5c518'}
+                                    onBlur={e => e.target.parentNode.style.borderColor = 'rgba(255,255,255,0.1)'}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    style={styles.eyeBtn}
+                                >
+                                    {showPassword ? '🙈' : '👁'}
+                                </button>
+                            </div>
                         </div>
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="btn-gradient w-full mt-2! h-11"
+                            style={{ ...styles.submitBtn, opacity: loading ? 0.8 : 1 }}
+                            onMouseEnter={e => { if (!loading) e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 12px 40px rgba(245,197,24,0.5)'; }}
+                            onMouseLeave={e => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 8px 30px rgba(245,197,24,0.35)'; }}
                         >
                             {loading ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span style={styles.spinnerRow}>
+                                    <span style={styles.spinner} /> Signing in...
+                                </span>
                             ) : (
-                                "Sign in"
+                                <span>▶ &nbsp;Sign In</span>
                             )}
                         </button>
                     </form>
 
-                    <p className="text-center text-sm font-medium text-slate-500 dark:text-slate-400 mt-6 transition-colors">
-                        Don't have an account?{' '}
-                        <Link to="/register" className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline transition-colors">
-                            Sign up
-                        </Link>
+                    <div style={styles.dividerRow}>
+                        <div style={styles.dividerLine} />
+                        <span style={styles.dividerText}>OR CONTINUE WITH</span>
+                        <div style={styles.dividerLine} />
+                    </div>
+
+                    <div style={styles.socialRow}>
+                        {[
+                            { icon: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg', label: 'Google' },
+                        ].map(s => (
+                            <button key={s.label} type="button" style={styles.socialBtn}
+                                onMouseEnter={e => e.currentTarget.style.borderColor = '#f5c518'}
+                                onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+                            >
+                                <img src={s.icon} alt={s.label} style={{ width: 18, height: 18 }} />
+                                <span>{s.label}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    <p style={styles.switchText}>
+                        New to Banana Hunt?{' '}
+                        <Link to="/register" style={styles.switchLink}>Create account →</Link>
                     </p>
                 </div>
-            </motion.div>
+            </div>
         </div>
     );
 };
+
+const styles = {
+    root: {
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'row-reverse',
+        background: '#0a0a0f',
+        position: 'relative',
+        overflow: 'hidden',
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    },
+    blob1: {
+        position: 'absolute', top: '-200px', left: '-200px',
+        width: '600px', height: '600px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(245,197,24,0.12) 0%, transparent 70%)',
+        filter: 'blur(60px)', zIndex: 0, pointerEvents: 'none',
+    },
+    blob2: {
+        position: 'absolute', bottom: '-150px', right: '420px',
+        width: '500px', height: '500px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(255,140,0,0.1) 0%, transparent 70%)',
+        filter: 'blur(60px)', zIndex: 0, pointerEvents: 'none',
+    },
+    blob3: {
+        position: 'absolute', top: '50%', left: '30%',
+        width: '300px', height: '300px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(245,197,24,0.06) 0%, transparent 70%)',
+        filter: 'blur(40px)', zIndex: 0, pointerEvents: 'none',
+    },
+    imagePanel: {
+        flex: 1,
+        position: 'relative',
+        display: 'none',
+        overflow: 'hidden',
+    },
+    bgImage: {
+        width: '100%', height: '100%', objectFit: 'cover',
+        position: 'absolute', inset: 0,
+    },
+    imagePanelOverlay: {
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 100%)',
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+        justifyContent: 'flex-end', padding: '48px',
+    },
+    gameBadge: {
+        background: 'rgba(245,197,24,0.2)', border: '1px solid rgba(245,197,24,0.4)',
+        color: '#f5c518', fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em',
+        borderRadius: '20px', padding: '6px 14px', marginBottom: '16px',
+        backdropFilter: 'blur(10px)',
+    },
+    heroTitle: {
+        fontSize: '56px', fontWeight: 900, lineHeight: 1.1, color: '#fff',
+        margin: '0 0 12px', textShadow: '0 4px 20px rgba(0,0,0,0.5)',
+    },
+    heroAccent: {
+        color: '#f5c518',
+        textShadow: '0 0 40px rgba(245,197,24,0.6)',
+    },
+    heroDesc: {
+        color: 'rgba(255,255,255,0.75)', fontSize: '16px', fontWeight: 500,
+        margin: '0 0 32px',
+    },
+    statRow: {
+        display: 'flex', alignItems: 'center', gap: '24px',
+        background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255,255,255,0.12)', borderRadius: '16px',
+        padding: '16px 28px',
+    },
+    statItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' },
+    statNum: { fontSize: '22px', fontWeight: 900, color: '#f5c518' },
+    statLabel: { fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' },
+    statDivider: { width: '1px', height: '32px', background: 'rgba(255,255,255,0.15)' },
+    formPanel: {
+        width: '100%', maxWidth: '480px', minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '32px 24px', position: 'relative', zIndex: 10,
+        borderRight: '1px solid rgba(255,255,255,0.06)',
+    },
+    formInner: { width: '100%', maxWidth: '400px' },
+    logoRow: {
+        display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px',
+    },
+    logoIcon: {
+        width: '40px', height: '40px', background: 'linear-gradient(135deg, #f5c518, #ff8c00)',
+        borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '20px', boxShadow: '0 4px 16px rgba(245,197,24,0.4)',
+    },
+    logoText: { fontSize: '18px', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' },
+    formHeader: { marginBottom: '32px' },
+    formTitle: { fontSize: '32px', fontWeight: 900, color: '#fff', margin: '0 0 6px', letterSpacing: '-0.03em' },
+    formSubtitle: { fontSize: '14px', color: 'rgba(255,255,255,0.45)', fontWeight: 500, margin: 0 },
+    errorBox: {
+        background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+        color: '#fc8181', borderRadius: '12px', padding: '12px 16px',
+        fontSize: '13px', fontWeight: 600, marginBottom: '20px',
+        display: 'flex', alignItems: 'center', gap: '8px',
+    },
+    errorIcon: { fontSize: '14px' },
+    form: { display: 'flex', flexDirection: 'column', gap: '20px' },
+    fieldGroup: { display: 'flex', flexDirection: 'column', gap: '8px' },
+    labelRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    label: { fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.02em' },
+    forgotLink: { fontSize: '12px', color: '#f5c518', textDecoration: 'none', fontWeight: 600, letterSpacing: '0.01em' },
+    inputWrapper: {
+        display: 'flex', alignItems: 'center', gap: '10px',
+        background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.1)',
+        borderRadius: '14px', padding: '0 16px', transition: 'border-color 0.2s',
+    },
+    inputIcon: { fontSize: '15px', opacity: 0.5, flexShrink: 0 },
+    input: {
+        flex: 1, background: 'transparent', border: 'none', outline: 'none',
+        color: '#fff', fontSize: '14px', fontWeight: 500, padding: '15px 0',
+        fontFamily: 'inherit',
+    },
+    eyeBtn: {
+        background: 'none', border: 'none', cursor: 'pointer',
+        fontSize: '15px', opacity: 0.5, padding: '4px', flexShrink: 0,
+    },
+    submitBtn: {
+        background: 'linear-gradient(135deg, #f5c518 0%, #ff8c00 100%)',
+        border: 'none', borderRadius: '14px', padding: '15px',
+        fontSize: '15px', fontWeight: 800, color: '#0a0a0f',
+        cursor: 'pointer', transition: 'all 0.25s ease',
+        boxShadow: '0 8px 30px rgba(245,197,24,0.35)',
+        letterSpacing: '0.02em', marginTop: '4px',
+    },
+    spinnerRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' },
+    spinner: {
+        display: 'inline-block', width: '16px', height: '16px',
+        border: '2px solid rgba(0,0,0,0.2)', borderTopColor: '#0a0a0f',
+        borderRadius: '50%', animation: 'spin 0.7s linear infinite',
+    },
+    dividerRow: { display: 'flex', alignItems: 'center', gap: '12px', margin: '28px 0 20px' },
+    dividerLine: { flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' },
+    dividerText: { fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', whiteSpace: 'nowrap' },
+    socialRow: { display: 'flex', gap: '12px', marginBottom: '28px' },
+    socialBtn: {
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+        background: 'rgba(255,255,255,0.04)', border: '1.5px solid rgba(255,255,255,0.1)',
+        borderRadius: '12px', padding: '13px 16px', cursor: 'pointer',
+        color: '#fff', fontSize: '13px', fontWeight: 600, transition: 'border-color 0.2s',
+        fontFamily: 'inherit',
+    },
+    switchText: { textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontWeight: 500, margin: 0 },
+    switchLink: { color: '#f5c518', textDecoration: 'none', fontWeight: 700 },
+};
+
+// Inject keyframes globally
+if (typeof document !== 'undefined' && !document.getElementById('banana-hunt-auth-styles')) {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'banana-hunt-auth-styles';
+    styleEl.textContent = `
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (min-width: 768px) {
+            .auth-image-panel { display: flex !important; }
+        }
+    `;
+    document.head.appendChild(styleEl);
+}
 
 export default Login;
