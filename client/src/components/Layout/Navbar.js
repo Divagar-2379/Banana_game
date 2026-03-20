@@ -36,6 +36,12 @@ const Navbar = () => {
         { label: 'Get Started', path: '/register', isButton: true },
     ];
 
+    const getAvatarSrc = (avatar) => {
+        if (!avatar || avatar === 'default-avatar.png') return null;
+        if (avatar.startsWith('http')) return avatar;
+        return `http://localhost:5005/uploads/${avatar}`;
+    };
+
     return (
         <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-indigo-100 dark:border-slate-800 shadow-sm' : 'bg-transparent'}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -114,9 +120,13 @@ const Navbar = () => {
                         <div className="px-4 py-4 space-y-2">
                             {isAuthenticated && (
                                 <div className="px-3 py-2 text-sm font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-indigo-700 dark:text-indigo-400">
-                                        {user?.username?.[0]?.toUpperCase()}
-                                    </div>
+                                    {getAvatarSrc(user?.avatar) ? (
+                                        <img src={getAvatarSrc(user.avatar)} alt="Avatar" className="w-6 h-6 rounded-full object-cover border border-indigo-200" />
+                                    ) : (
+                                        <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-indigo-700 dark:text-indigo-400">
+                                            {user?.username?.[0]?.toUpperCase()}
+                                        </div>
+                                    )}
                                     <span className="text-slate-900 dark:text-white">{user?.username}</span>
                                 </div>
                             )}

@@ -371,3 +371,59 @@ exports.getMe = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+// Update user profile (username, email, avatar)
+exports.updateProfile = async (req, res) => {
+    try {
+        const { username, email } = req.body;
+        const userId = req.userId;
+        let setFields = [];
+        let queryParams = [];
+        let paramIndex = 1;
+
+        if (username) {
+            setFields.push(`username = $${paramIndex++}`);
+            queryParams.push(username);
+        }
+        
+        if (email) {
+            setFields.push(`email = $${paramIndex++}`);
+            queryParams.push(email);
+        }
+
+        if (req.file) {
+            setFields.push(`avatar = $${paramIndex++}`);
+            queryParams.push(req.file.filename);
+        }
+
+        if (setFields.length === 0) {
+            return res.status(400).json({ message: 'No fields to update' });
+        }
+
+        queryParams.push(userId);
+        const updateQuery = `
+            UPDATE users SET ${setFields.join(', ')}, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $${paramIndex}
+            RETURNING id, username, email, avatar
+        `;
+
+        const result = await query(updateQuery, queryParams);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            user: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Update profile error:', error);
+        if (error.code === '23505') { // postgres unique constraint error
+            return res.status(400).json({ message: 'Username or email already exists' });
+        }
+        res.status(500).json({ message: 'Server error while updating profile' });
+    }
+};

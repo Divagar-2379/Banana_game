@@ -37,8 +37,13 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+const path = require('path');
+
 // Database connection
 initDatabase();
+
+// Serve static field containing user avatars
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
 app.use('/api/auth', authRoutes);

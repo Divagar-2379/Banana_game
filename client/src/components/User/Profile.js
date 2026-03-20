@@ -5,9 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Mail, Edit3, Settings, Shield, Activity, User, ChevronRight, X, Camera, Bell, Eye, Moon, Check, UploadCloud, Trophy, Target } from 'lucide-react';
 
 const Profile = () => {
-    const { user } = useAuth();
+    const { user, updateProfile } = useAuth();
     const [activeTab, setActiveTab] = useState('general');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    
+    // Edit Form State
+    const [editUsername, setEditUsername] = useState(user?.username || '');
+    const [editEmail, setEditEmail] = useState(user?.email || '');
+    const [editAvatarFile, setEditAvatarFile] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const fileInputRef = React.useRef(null);
 
     // Theme state
     const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -43,6 +52,42 @@ const Profile = () => {
         </div>
     );
 
+    const getAvatarSrc = (avatar) => {
+        if (!avatar || avatar === 'default-avatar.png') return null;
+        if (avatar.startsWith('http')) return avatar;
+        return `http://localhost:5005/uploads/${avatar}`;
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setEditAvatarFile(file);
+            setAvatarPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleSave = async () => {
+        setIsLoading(true);
+        setError('');
+        try {
+            const formData = new FormData();
+            if (editUsername !== user.username) formData.append('username', editUsername);
+            if (editEmail !== user.email) formData.append('email', editEmail);
+            if (editAvatarFile) formData.append('avatar', editAvatarFile);
+            
+            const result = await updateProfile(formData);
+            if (result.success) {
+                setIsEditModalOpen(false);
+            } else {
+                setError(result.message);
+            }
+        } catch (err) {
+            setError('An error occurred during update');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const renderTabContent = () => {
         switch (activeTab) {
             case 'general':
@@ -58,9 +103,13 @@ const Profile = () => {
                         <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-indigo-100/50 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.04)] shadow-indigo-500/5 overflow-hidden transition-colors">
                             <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 border-b border-slate-100/50 dark:border-slate-700">
                                 <div className="relative group">
-                                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-700 dark:to-slate-600 border border-indigo-100 dark:border-slate-600 flex items-center justify-center text-4xl font-black text-indigo-500 dark:text-indigo-400 shadow-inner group-hover:shadow-md transition-all duration-300">
-                                        {user.username.charAt(0).toUpperCase()}
-                                    </div>
+                                    {getAvatarSrc(user.avatar) ? (
+                                        <img src={getAvatarSrc(user.avatar)} alt="Avatar" className="w-24 h-24 rounded-2xl object-cover border border-indigo-100 dark:border-slate-600 shadow-inner group-hover:shadow-md transition-all duration-300" />
+                                    ) : (
+                                        <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-700 dark:to-slate-600 border border-indigo-100 dark:border-slate-600 flex items-center justify-center text-4xl font-black text-indigo-500 dark:text-indigo-400 shadow-inner group-hover:shadow-md transition-all duration-300">
+                                            {user.username.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
                                     <button
                                         onClick={() => setIsEditModalOpen(true)}
                                         className="absolute -bottom-2 -right-2 w-8 h-8 bg-white dark:bg-slate-800 rounded-full border border-indigo-100 dark:border-slate-600 shadow-sm flex items-center justify-center text-indigo-500 dark:text-indigo-400 hover:text-white dark:hover:text-white hover:bg-indigo-600 dark:hover:bg-indigo-600 hover:scale-105 hover:border-transparent transition-all opacity-0 group-hover:opacity-100 z-10"
@@ -372,12 +421,18 @@ const Profile = () => {
                                 </div>
                                 <div className="p-6 space-y-8 bg-slate-50/50 dark:bg-slate-900/50 transition-colors">
                                     {/* Avatar Upload Placeholder */}
+                                    {error && <div className="text-red-500 text-sm font-semibold">{error}</div>}
                                     <div className="flex flex-col items-center gap-4">
-                                        <div className="relative group cursor-pointer">
-                                            <div className="w-24 h-24 rounded-2xl bg-indigo-50 dark:bg-slate-700 border-2 border-dashed border-indigo-200 dark:border-slate-500 flex flex-col items-center justify-center text-indigo-400 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:bg-indigo-100/50 dark:group-hover:bg-slate-600 group-hover:border-indigo-400 transition-all shadow-sm">
-                                                <UploadCloud className="w-7 h-7 mb-1 group-hover:-translate-y-1 transition-transform duration-300" />
-                                                <span className="text-[10px] font-bold uppercase tracking-wider">Upload</span>
-                                            </div>
+                                        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current.click()}>
+                                            {(avatarPreview || getAvatarSrc(user.avatar)) ? (
+                                                <img src={avatarPreview || getAvatarSrc(user.avatar)} alt="Preview" className="w-24 h-24 rounded-2xl object-cover border-2 border-dashed border-indigo-200 dark:border-slate-500 shadow-sm transition-all" />
+                                            ) : (
+                                                <div className="w-24 h-24 rounded-2xl bg-indigo-50 dark:bg-slate-700 border-2 border-dashed border-indigo-200 dark:border-slate-500 flex flex-col items-center justify-center text-indigo-400 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:bg-indigo-100/50 dark:group-hover:bg-slate-600 group-hover:border-indigo-400 transition-all shadow-sm">
+                                                    <UploadCloud className="w-7 h-7 mb-1 group-hover:-translate-y-1 transition-transform duration-300" />
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider">Upload</span>
+                                                </div>
+                                            )}
+                                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                                             <div className="absolute -bottom-3 -right-3 w-8 h-8 rounded-full bg-indigo-600 border-[3px] border-white dark:border-slate-800 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
                                                 <Camera className="w-3.5 h-3.5" />
                                             </div>
@@ -396,7 +451,8 @@ const Profile = () => {
                                                 <input
                                                     type="text"
                                                     className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-sm rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-500"
-                                                    defaultValue={user.username}
+                                                    value={editUsername}
+                                                    onChange={(e) => setEditUsername(e.target.value)}
                                                 />
                                             </div>
                                         </div>
@@ -409,7 +465,8 @@ const Profile = () => {
                                                 <input
                                                     type="email"
                                                     className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-sm rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-500"
-                                                    defaultValue={user.email}
+                                                    value={editEmail}
+                                                    onChange={(e) => setEditEmail(e.target.value)}
                                                 />
                                             </div>
                                         </div>
@@ -423,9 +480,11 @@ const Profile = () => {
                                         Cancel
                                     </button>
                                     <button
-                                        className="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.23)] hover:-translate-y-0.5 transition-all flex items-center gap-2"
+                                        onClick={handleSave}
+                                        disabled={isLoading}
+                                        className="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.23)] hover:-translate-y-0.5 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <Check className="w-4 h-4" /> Save Changes
+                                        <Check className="w-4 h-4" /> {isLoading ? 'Saving...' : 'Save Changes'}
                                     </button>
                                 </div>
                             </motion.div>

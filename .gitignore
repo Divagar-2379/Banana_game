@@ -35,5 +35,3 @@ coverage/
 *.swp
 *.swo
 
-# MongoDB data
-data/

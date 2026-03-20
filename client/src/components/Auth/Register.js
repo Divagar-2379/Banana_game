@@ -12,7 +12,6 @@ const Register = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [step, setStep] = useState(0); // 0 = idle, 1 = animating
     
     const { register } = useAuth();
     const navigate = useNavigate();

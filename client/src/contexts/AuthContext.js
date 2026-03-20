@@ -139,6 +139,23 @@ export const AuthProvider = ({ children }) => {
         }));
     };
 
+    const updateProfile = async (formData) => {
+        try {
+            const response = await api.put('/auth/profile', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            setUser(response.data.user);
+            return { success: true, message: response.data.message };
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Profile update failed'
+            };
+        }
+    };
+
     const value = {
         user,
         isAuthenticated,
@@ -149,7 +166,8 @@ export const AuthProvider = ({ children }) => {
         resetPassword,
         register,
         logout,
-        updateUserStats
+        updateUserStats,
+        updateProfile
     };
 
     return (

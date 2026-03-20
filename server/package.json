@@ -10,19 +10,21 @@
         "db:init": "node scripts/initDb.js"
     },
     "dependencies": {
-        "express": "^4.18.2",
-        "pg": "^8.11.3",
+        "axios": "^1.5.0",
+        "bcryptjs": "^2.4.3",
+        "cookie-parser": "^1.4.6",
         "cors": "^2.8.5",
         "dotenv": "^16.3.1",
-        "bcryptjs": "^2.4.3",
+        "express": "^4.18.2",
+        "express-validator": "^7.0.1",
         "jsonwebtoken": "^9.0.2",
-        "axios": "^1.5.0",
-        "cookie-parser": "^1.4.6",
-        "express-validator": "^7.0.1"
+        "multer": "^2.1.1",
+        "nodemailer": "^8.0.3",
+        "pg": "^8.11.3"
     },
     "devDependencies": {
-        "nodemon": "^3.0.1",
-        "jest": "^29.6.2"
+        "jest": "^29.6.2",
+        "nodemon": "^3.0.1"
     },
     "author": "Your Name",
     "license": "MIT"

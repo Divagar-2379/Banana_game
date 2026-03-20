@@ -1,8 +1,8 @@
-# 🍌 Banana Hunt - MERN Stack Game
+# 🍌 Banana Hunt - PERN Stack Game
 
 **CIS046-3 Software For Enterprise Assignment**
 
-A full-stack number guessing game built with MongoDB, Express, React, and Node.js.
+A full-stack number guessing game built with PostgreSQL, Express, React, and Node.js.
 
 ## 🎮 Game Description
 
@@ -14,7 +14,7 @@ Players guess how many bananas are shown in an image within 60 seconds. The game
 
 ## 🛠 Tech Stack
 
-- **Postgree - Database
+- **P**ostgreSQL - Database
 - **E**xpress - Backend Framework
 - **R**eact - Frontend Library
 - **N**ode.js - Runtime Environment
@@ -23,7 +23,7 @@ Players guess how many bananas are shown in an image within 60 seconds. The game
 
 ### Prerequisites
 - Node.js (v14+)
-- MongoDB (local or Atlas)
+- PostgreSQL
 - Git
 
 ### 1. Clone Repository
