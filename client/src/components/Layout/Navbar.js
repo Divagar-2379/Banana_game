@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, User, Gamepad2, Menu, X, Command } from 'lucide-react';
+import { LogOut, User, Gamepad2, Menu, X, Command, Trophy, Store } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, user, logout } = useAuth();
@@ -30,6 +30,8 @@ const Navbar = () => {
 
     const navItems = isAuthenticated ? [
         { label: 'Dashboard', path: '/play', icon: Gamepad2 },
+        { label: 'Leaderboard', path: '/leaderboards', icon: Trophy },
+        { label: 'Shop', path: '/shop', icon: Store },
         { label: 'Settings', path: '/profile', icon: User },
     ] : [
         { label: 'Sign In', path: '/login' },

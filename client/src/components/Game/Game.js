@@ -3,8 +3,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import Timer from './Timer';
 import { playSound } from '../../utils/audio';
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Play, Trophy, XCircle, Lightbulb, User as UserIcon, Crown, Heart, Target, Infinity as InfinityIcon, Flag } from 'lucide-react';
+import { Loader2, Play, Trophy, XCircle, Lightbulb, User as UserIcon, Crown, Heart, Target, Infinity as InfinityIcon, Flag, Flame, Coins, Zap, Clock } from 'lucide-react';
 
 const Game = () => {
     const { user, updateUserStats } = useAuth();
@@ -22,6 +24,15 @@ const Game = () => {
     const [score, setScore] = useState(0);
     const [hint, setHint] = useState(null);
     const [shakeCount, setShakeCount] = useState(0);
+    
+    // New mechanics state
+    const [coins, setCoins] = useState(user?.stats?.goldCoins || 0);
+    const [comboMultiplier, setComboMultiplier] = useState(1);
+    const [fastAnswers, setFastAnswers] = useState(0);
+    const [questionStartTime, setQuestionStartTime] = useState(0);
+    const [disabledKeys, setDisabledKeys] = useState([]);
+    
+    const { width, height } = useWindowSize();
 
     const currentPotentialScore = score + Math.max(0, 100 + timeLeft);
     const timeTaken = maxTime - timeLeft;
@@ -34,6 +45,11 @@ const Game = () => {
                     if (prev <= 1) {
                         handleTimeUp();
                         return 0;
+                    }
+                    if (prev <= 10) {
+                        playSound('urgentTick');
+                    } else if (prev <= 30 && prev % 2 === 0) {
+                        playSound('tick');
                     }
                     return prev - 1;
                 });
@@ -73,8 +89,10 @@ const Game = () => {
             const timeLimit = getDynamicTimeLimit();
             setTimeLeft(timeLimit);
             setMaxTime(timeLimit);
+            setDisabledKeys([]);
             
             setGameState('playing');
+            setQuestionStartTime(Date.now());
             setMessage('How many bananas do you see?');
         } catch (error) {
             setMessage('Failed to load level.');
@@ -102,8 +120,12 @@ const Game = () => {
             const timeLimit = getDynamicTimeLimit();
             setTimeLeft(timeLimit);
             setMaxTime(timeLimit);
+            setDisabledKeys([]);
+            setComboMultiplier(1);
+            setFastAnswers(0);
             
             setGameState('playing');
+            setQuestionStartTime(Date.now());
             setMessage('How many bananas do you see?');
         } catch (error) {
             setMessage('Failed to start. Please try again.');
@@ -132,7 +154,28 @@ const Game = () => {
             const result = response.data;
 
             if (result.correct) {
-                setScore(prev => prev + result.score);
+                if (result.coinsEarned) {
+                    setCoins(prev => prev + result.coinsEarned);
+                }
+
+                // Combo Logic (Answered in < 3s)
+                const answerTime = (Date.now() - questionStartTime) / 1000;
+                if (answerTime < 3) {
+                    setFastAnswers(prev => {
+                        const newFast = prev + 1;
+                        if (newFast >= 3) { setComboMultiplier(3); }
+                        else if (newFast >= 1) { setComboMultiplier(2); }
+                        return newFast;
+                    });
+                } else {
+                    setFastAnswers(0);
+                    setComboMultiplier(1);
+                }
+
+                // Add combo multiplier to score
+                const baseResultScore = result.score || 0;
+                const finalScored = baseResultScore * comboMultiplier;
+                setScore(prev => prev + finalScored);
                 playSound('win');
                 updateUserStats(result.stats);
                 
@@ -155,6 +198,8 @@ const Game = () => {
                 setGuess('');
                 const newAttempts = attempts + 1;
                 setAttempts(newAttempts);
+                setFastAnswers(0);
+                setComboMultiplier(1);
 
                 if (result.gameOver || newAttempts >= 3) {
                     setGameState('lost');
@@ -192,6 +237,34 @@ const Game = () => {
     const maxLives = 3;
     const remainingLives = Math.max(0, maxLives - attempts);
 
+    // Power-ups actions
+    const useTimeFreeze = () => {
+        if (coins >= 10 && gameState === 'playing') {
+            setCoins(prev => prev - 10);
+            setTimeLeft(prev => prev + 10);
+            setMaxTime(prev => prev + 10);
+            playSound('click');
+        }
+    };
+
+    const useFiftyFifty = () => {
+        if (coins >= 15 && gameState === 'playing' && disabledKeys.length === 0 && gameData?.solution) {
+            setCoins(prev => prev - 15);
+            // Hide 4 wrong keys
+            let wrongs = [1,2,3,4,5,6,7,8,9].filter(k => k !== gameData.solution);
+            // shuffle array
+            wrongs.sort(() => 0.5 - Math.random());
+            setDisabledKeys(wrongs.slice(0, 4));
+            playSound('click');
+        }
+    };
+
+    const handleKeypadPress = (num) => {
+        if (disabledKeys.includes(num)) return;
+        setGuess(num.toString());
+        playSound('click');
+    };
+
     return (
         <div className="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 relative overflow-hidden font-sans transition-colors duration-300">
             {/* Colorful Background Decor */}
@@ -214,6 +287,9 @@ const Game = () => {
                     <div className="flex gap-4 sm:gap-6 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800/50 px-5 py-2.5 rounded-xl border border-indigo-50 dark:border-slate-700 shadow-sm transition-colors">
                         <span className="flex items-center gap-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-default">
                             <UserIcon className="w-4 h-4 text-indigo-400 dark:text-indigo-500" /> {user?.username}
+                        </span>
+                        <span className="hidden sm:flex items-center gap-1.5 text-amber-500 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-900/40 px-2 py-0.5 rounded-lg border border-amber-200 dark:border-amber-700/50">
+                            <Coins className="w-4 h-4 fill-current" /> {coins}
                         </span>
                         <span className="hidden sm:flex items-center gap-2 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-default">
                             <Trophy className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> {user?.stats?.gamesWon || 0} Wins
@@ -342,17 +418,48 @@ const Game = () => {
                                 {/* Main Area */}
                                 <div className="flex flex-col md:flex-row gap-6 h-full">
                                     {/* Left: Image Container */}
-                                    <div className="flex-1 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-indigo-100 dark:border-slate-700 overflow-hidden relative min-h-[300px] md:min-h-[400px] flex items-center justify-center p-6 group transition-colors">
+                                    <div className={`flex-1 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-indigo-100 dark:border-slate-700 overflow-hidden relative min-h-[300px] md:min-h-[400px] flex items-center justify-center p-6 group transition-all duration-500 ${gameMode === 'level' && currentLevel > 15 ? 'filter saturate-[1.2]' : ''}`}>
                                         {gameData?.question ? (
                                             <motion.img
                                                 key={gameData.question}
-                                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                                                 src={gameData.question}
                                                 alt="Banana puzzle"
-                                                className="w-full h-full object-contain max-h-[350px] transition-transform duration-500"
+                                                className={`w-full h-full object-contain max-h-[350px] transition-transform duration-500 ${gameMode === 'level' && currentLevel > 30 ? (currentLevel % 2 === 0 ? 'scale-x-[-1]' : 'rotate-[2deg]') : ''}`}
                                             />
                                         ) : (
                                             <Loader2 className="w-8 h-8 text-indigo-400 dark:text-indigo-500 animate-spin" />
+                                        )}
+                                        
+                                        {comboMultiplier > 1 && gameState === 'playing' && (
+                                            <motion.div 
+                                                initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                                                className="absolute top-4 left-4 flex items-center gap-1.5 bg-orange-500/90 text-white px-3 py-1.5 rounded-full font-black tracking-widest shadow-[0_0_15px_rgba(249,115,22,0.5)] border border-orange-400 backdrop-blur-sm z-20"
+                                            >
+                                                <Flame className="w-4 h-4 fill-current" /> {comboMultiplier}x COMBO
+                                            </motion.div>
+                                        )}
+                                        
+                                        {/* Power-ups container */}
+                                        {gameState === 'playing' && (
+                                            <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
+                                                <button 
+                                                    onClick={useTimeFreeze} disabled={coins < 10}
+                                                    className={`p-2.5 rounded-xl border font-bold flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 group relative ${coins >= 10 ? 'bg-sky-500 border-sky-400 text-white shadow-sky-500/30' : 'bg-slate-200 border-slate-300 text-slate-400'}`}
+                                                    title="Freeze Time (+10s) - 10 Coins"
+                                                >
+                                                    <Clock className="w-5 h-5 fill-current" />
+                                                    <span className="absolute -bottom-8 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">10 Coins</span>
+                                                </button>
+                                                <button 
+                                                    onClick={useFiftyFifty} disabled={coins < 15 || disabledKeys.length > 0}
+                                                    className={`p-2.5 rounded-xl border font-bold flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 group relative ${coins >= 15 && disabledKeys.length === 0 ? 'bg-indigo-500 border-indigo-400 text-white shadow-indigo-500/30' : 'bg-slate-200 border-slate-300 text-slate-400'}`}
+                                                    title="50/50 - 15 Coins"
+                                                >
+                                                    <Zap className="w-5 h-5 fill-current" />
+                                                    <span className="absolute -bottom-8 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">15 Coins</span>
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
 
@@ -370,16 +477,36 @@ const Game = () => {
                                                     <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium transition-colors">Press 1-9 to guess</p>
                                                 </div>
 
-                                                <form onSubmit={handleSubmit} className="flex flex-col gap-4 flex-1 justify-center">
+                                                <form onSubmit={handleSubmit} className="flex flex-col gap-3 flex-1 justify-center">
                                                     <input
                                                         type="text"
                                                         value={guess}
                                                         onChange={handleInputChange}
                                                         placeholder="?"
-                                                        className="w-full text-center text-6xl font-black h-32 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 block mb-4 shadow-inner"
+                                                        className="hidden md:block w-full text-center text-5xl font-black h-24 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 mb-2 shadow-inner"
                                                         maxLength="1"
                                                         autoFocus
                                                     />
+                                                    
+                                                    {/* On-Screen Keypad */}
+                                                    <div className="grid grid-cols-3 gap-2 mb-2 w-full max-w-[260px] mx-auto">
+                                                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                                                            <button
+                                                                type="button"
+                                                                key={num}
+                                                                disabled={disabledKeys.includes(num)}
+                                                                onClick={() => handleKeypadPress(num)}
+                                                                className={`h-14 rounded-xl text-2xl font-black transition-all shadow-sm active:scale-95 ${guess === num.toString() 
+                                                                    ? 'bg-indigo-600 text-white shadow-indigo-500/30' 
+                                                                    : disabledKeys.includes(num)
+                                                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-50'
+                                                                    : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 hover:border-indigo-400 dark:hover:border-indigo-400 hover:text-indigo-600'}`}
+                                                            >
+                                                                {num}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+
                                                     <button type="submit" disabled={!guess} className="btn-gradient py-3.5 text-base w-full shadow-lg shadow-indigo-500/20">
                                                         Submit Guess
                                                     </button>
@@ -448,6 +575,16 @@ const Game = () => {
                     </AnimatePresence>
                 </div>
             </div>
+            {/* Confetti Celebration */}
+            {gameState === 'completed' || (gameState === 'won' && gameMode === 'level' && currentLevel % 10 === 1 && currentLevel > 1) ? (
+                <Confetti
+                    width={width}
+                    height={height}
+                    recycle={false}
+                    numberOfPieces={500}
+                    gravity={0.15}
+                />
+            ) : null}
         </div>
     );
 };

@@ -14,11 +14,11 @@ const BANANA_API_URL = process.env.BANANA_API_URL || 'https://marcconrad.com/uob
 const activeGames = new Map();
 
 // Update user stats in PostgreSQL
-const updateUserStats = async (userId, won, score) => {
+const updateUserStats = async (userId, won, score, coinsEarned = 0) => {
     try {
         // Get current stats
         const currentStats = await query(
-            'SELECT games_played, games_won, current_streak, best_streak, total_score FROM users WHERE id = $1',
+            'SELECT games_played, games_won, current_streak, best_streak, total_score, gold_coins FROM users WHERE id = $1',
             [userId]
         );
 
@@ -32,6 +32,7 @@ const updateUserStats = async (userId, won, score) => {
             ? newCurrentStreak
             : stats.best_streak;
         const newTotalScore = stats.total_score + score;
+        const newGoldCoins = (stats.gold_coins || 0) + coinsEarned;
 
         // Update database
         await query(
@@ -41,9 +42,10 @@ const updateUserStats = async (userId, won, score) => {
            current_streak = $3, 
            best_streak = $4, 
            total_score = $5,
+           gold_coins = $6,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $6`,
-            [newGamesPlayed, newGamesWon, newCurrentStreak, newBestStreak, newTotalScore, userId]
+       WHERE id = $7`,
+            [newGamesPlayed, newGamesWon, newCurrentStreak, newBestStreak, newTotalScore, newGoldCoins, userId]
         );
 
         return {
@@ -51,7 +53,8 @@ const updateUserStats = async (userId, won, score) => {
             gamesWon: newGamesWon,
             currentStreak: newCurrentStreak,
             bestStreak: newBestStreak,
-            totalScore: newTotalScore
+            totalScore: newTotalScore,
+            goldCoins: newGoldCoins
         };
     } catch (error) {
         console.error('Error updating stats:', error);
@@ -159,11 +162,12 @@ exports.submitAnswer = async (req, res) => {
             const attemptPenalty = (game.attempts - 1) * 20;
             const timeBonus = Math.max(0, 60 - timeTaken);
             const finalScore = Math.floor(baseScore - attemptPenalty + timeBonus);
+            const coinsEarned = Math.floor(finalScore / 10);
 
             game.status = 'won';
 
             // Update user stats in PostgreSQL
-            const newStats = await updateUserStats(userId, true, Math.max(0, finalScore));
+            const newStats = await updateUserStats(userId, true, Math.max(0, finalScore), coinsEarned);
 
             // Clean up
             activeGames.delete(gameId);
@@ -172,6 +176,7 @@ exports.submitAnswer = async (req, res) => {
                 success: true,
                 correct: true,
                 score: Math.max(0, finalScore),
+                coinsEarned: coinsEarned,
                 attempts: game.attempts,
                 message: '🎉 Correct! Great job!',
                 stats: newStats
@@ -184,7 +189,7 @@ exports.submitAnswer = async (req, res) => {
                 game.status = 'lost';
 
                 // Update user stats (loss)
-                const newStats = await updateUserStats(userId, false, 0);
+                const newStats = await updateUserStats(userId, false, 0, 0);
 
                 activeGames.delete(gameId);
 

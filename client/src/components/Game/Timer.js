@@ -19,13 +19,13 @@ const Timer = ({ timeLeft, maxTime = 60 }) => {
     const percentage = Math.max(0, Math.min(100, (timeLeft / maxTime) * 100));
 
     return (
-        <div className="w-full flex items-center justify-between gap-4">
+        <div className={`w-full flex items-center justify-between gap-4 transition-colors ${isUrgent ? 'animate-[pulse_1s_ease-in-out_infinite]' : ''}`}>
             <motion.div
-                animate={isUrgent ? { scale: [1, 1.05, 1] } : {}}
-                transition={isUrgent ? { repeat: Infinity, duration: 0.8 } : {}}
-                className={`flex items-center gap-2 font-bold text-2xl tracking-tight ${colorClass}`}
+                animate={isUrgent ? { scale: [1, 1.15, 1], textShadow: ["0 0 0px #f43f5e", "0 0 15px #f43f5e", "0 0 0px #f43f5e"] } : {}}
+                transition={isUrgent ? { repeat: Infinity, duration: 0.5 } : {}}
+                className={`flex items-center gap-2 font-black text-2xl tracking-tight ${colorClass}`}
             >
-                <TimerIcon className={`w-6 h-6 ${isUrgent ? 'animate-pulse' : 'text-indigo-400'}`} />
+                <TimerIcon className={`w-6 h-6 ${isUrgent ? 'animate-bounce' : 'text-indigo-400'}`} />
                 <span className="tabular-nums">00:{timeLeft.toString().padStart(2, '0')}</span>
             </motion.div>
 

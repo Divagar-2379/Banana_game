@@ -53,6 +53,20 @@ export const playSound = (type) => {
             gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1);
             osc.start(now);
             osc.stop(now + 1);
+        } else if (type === 'tick') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(800, now);
+            gainNode.gain.setValueAtTime(0.05, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            osc.start(now);
+            osc.stop(now + 0.05);
+        } else if (type === 'urgentTick') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(1200, now);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc.start(now);
+            osc.stop(now + 0.08);
         }
     } catch (e) {
         console.warn('Audio not supported or blocked', e);

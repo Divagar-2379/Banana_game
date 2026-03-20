@@ -55,6 +55,7 @@ const initDatabase = async () => {
         total_score INTEGER DEFAULT 0,
         current_streak INTEGER DEFAULT 0,
         best_streak INTEGER DEFAULT 0,
+        gold_coins INTEGER DEFAULT 0,
         sound_enabled BOOLEAN DEFAULT true,
         theme VARCHAR(20) DEFAULT 'light',
         last_login TIMESTAMP,
@@ -63,6 +64,9 @@ const initDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+        // Migration: add gold_coins if it doesn't exist
+        await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS gold_coins INTEGER DEFAULT 0`);
 
         // Create game_sessions table (optional - for history)
         await query(`

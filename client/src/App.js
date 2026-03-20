@@ -14,6 +14,8 @@ import Register from './components/Auth/Register';
 import ForgotPassword from './components/Auth/ForgotPassword';
 import Game from './components/Game/Game';
 import Profile from './components/User/Profile';
+import Leaderboards from './components/User/Leaderboards';
+import Shop from './components/User/Shop';
 import PrivateRoute from './components/Auth/PrivateRoute';
 import './App.css';
 
@@ -40,6 +42,16 @@ function App() {
                             <Route path="/profile" element={
                                 <PrivateRoute>
                                     <Profile />
+                                </PrivateRoute>
+                            } />
+                            <Route path="/leaderboards" element={
+                                <PrivateRoute>
+                                    <Leaderboards />
+                                </PrivateRoute>
+                            } />
+                            <Route path="/shop" element={
+                                <PrivateRoute>
+                                    <Shop />
                                 </PrivateRoute>
                             } />
                         </Routes>

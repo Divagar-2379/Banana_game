@@ -53,7 +53,7 @@ exports.register = async (req, res) => {
         const newUser = await query(
             `INSERT INTO users (username, email, password, created_at, updated_at) 
        VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
-       RETURNING id, username, email, games_played, games_won, total_score, current_streak, best_streak`,
+       RETURNING id, username, email, games_played, games_won, total_score, current_streak, best_streak, gold_coins`,
             [username, email, hashedPassword]
         );
 
@@ -83,7 +83,8 @@ exports.register = async (req, res) => {
                     gamesWon: user.games_won,
                     totalScore: user.total_score,
                     currentStreak: user.current_streak,
-                    bestStreak: user.best_streak
+                    bestStreak: user.best_streak,
+                    goldCoins: user.gold_coins
                 }
             },
             token
@@ -149,7 +150,8 @@ exports.login = async (req, res) => {
                     gamesWon: user.games_won,
                     totalScore: user.total_score,
                     currentStreak: user.current_streak,
-                    bestStreak: user.best_streak
+                    bestStreak: user.best_streak,
+                    goldCoins: user.gold_coins
                 }
             },
             token
@@ -208,7 +210,8 @@ exports.verifyOtp = async (req, res) => {
                     gamesWon: user.games_won,
                     totalScore: user.total_score,
                     currentStreak: user.current_streak,
-                    bestStreak: user.best_streak
+                    bestStreak: user.best_streak,
+                    goldCoins: user.gold_coins
                 }
             },
             token
@@ -333,7 +336,7 @@ exports.getMe = async (req, res) => {
     try {
         const userResult = await query(
             `SELECT id, username, email, avatar, games_played, games_won, total_score, 
-              current_streak, best_streak, sound_enabled, theme, last_login, created_at 
+              current_streak, best_streak, gold_coins, sound_enabled, theme, last_login, created_at 
        FROM users WHERE id = $1`,
             [req.userId]
         );
@@ -356,7 +359,8 @@ exports.getMe = async (req, res) => {
                     gamesWon: user.games_won,
                     totalScore: user.total_score,
                     currentStreak: user.current_streak,
-                    bestStreak: user.best_streak
+                    bestStreak: user.best_streak,
+                    goldCoins: user.gold_coins
                 },
                 preferences: {
                     soundEnabled: user.sound_enabled,
