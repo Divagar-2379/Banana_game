@@ -4,14 +4,16 @@
  * Router handles navigation events
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import Navbar from './components/Layout/Navbar';
 import Home from './components/Layout/Home';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import ForgotPassword from './components/Auth/ForgotPassword';
+import IntroVideo from './components/Layout/IntroVideo';
 import Game from './components/Game/Game';
 import Profile from './components/User/Profile';
 import Leaderboards from './components/User/Leaderboards';
@@ -20,10 +22,27 @@ import PrivateRoute from './components/Auth/PrivateRoute';
 import './App.css';
 
 function App() {
+    const [showIntro, setShowIntro] = useState(false);
+
+    useEffect(() => {
+        // Check if intro has played this session
+        const hasPlayed = sessionStorage.getItem('intro_played');
+        if (!hasPlayed) {
+            setShowIntro(true);
+        }
+    }, []);
+
+    const handleIntroComplete = () => {
+        setShowIntro(false);
+        sessionStorage.setItem('intro_played', 'true');
+    };
+
     return (
+        <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"}>
         <AuthProvider>
             <Router>
-                <div className="app">
+                <div className="app relative">
+                    {showIntro && <IntroVideo onComplete={handleIntroComplete} />}
                     <Navbar />
                     <main className="main-content">
                         <Routes>
@@ -59,6 +78,7 @@ function App() {
                 </div>
             </Router>
         </AuthProvider>
+        </GoogleOAuthProvider>
     );
 }
 

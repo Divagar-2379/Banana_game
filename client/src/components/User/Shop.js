@@ -1,29 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
 import { motion } from 'framer-motion';
-import { Coins, Check, Lock, Palette, Store, Wand2, Paintbrush, User } from 'lucide-react';
+import { Coins, Check, Lock, Store, Wand2, Paintbrush, User, Loader2 } from 'lucide-react';
 import { playSound } from '../../utils/audio';
 
 const Shop = () => {
-    const { user } = useAuth();
-    const [coins, setCoins] = useState(user?.stats?.goldCoins || 50); // Mock default for UX preview
-    
-    const items = [
-        { id: 1, type: 'avatar', name: 'Golden Banana', price: 200, icon: '🍌', owned: false },
-        { id: 2, type: 'avatar', name: 'Monkey King', price: 500, icon: '🐵', owned: false },
-        { id: 3, type: 'theme', name: 'Cyberpunk Theme', price: 1000, icon: '🌃', owned: false },
-        { id: 4, type: 'effect', name: 'Diamond Confetti', price: 750, icon: '💎', owned: false },
-    ];
+    const { user, updateUserStats } = useAuth();
+    const [coins, setCoins] = useState(user?.stats?.goldCoins || 0);
+    const [shopItems, setShopItems] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const [shopItems, setShopItems] = useState(items);
+    useEffect(() => {
+        const fetchShop = async () => {
+            try {
+                const res = await api.get('/shop/items');
+                setShopItems(res.data.items);
+                setCoins(user?.stats?.goldCoins || 0);
+            } catch (err) {
+                console.error("Failed to load shop", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchShop();
+    }, [user?.stats?.goldCoins]);
 
-    const handlePurchase = (id, price) => {
+    const handlePurchase = async (id, price) => {
         if (coins >= price) {
-            playSound('win');
-            setCoins(prev => prev - price);
-            setShopItems(items => items.map(item => item.id === id ? { ...item, owned: true } : item));
+            try {
+                const res = await api.post('/shop/purchase', { itemId: id });
+                playSound('win');
+                setCoins(res.data.coinsRemaining);
+                updateUserStats({ ...user.stats, goldCoins: res.data.coinsRemaining });
+                setShopItems(items => items.map(item => item.id === id ? { ...item, owned: true } : item));
+            } catch (err) {
+                console.error("Purchase failed", err);
+                playSound('wrong');
+            }
         } else {
             playSound('wrong');
+        }
+    };
+
+    const handleEquip = async (type, value) => {
+        try {
+            await api.post('/shop/equip', { type, value });
+            playSound('click');
+            if (type === 'theme' && value === 'Cyberpunk Theme') {
+                document.body.classList.add('theme-cyberpunk');
+            }
+            alert('Equipped! Refresh may be needed for some changes.');
+        } catch (err) {
+            console.error(err);
         }
     };
 
@@ -39,11 +68,16 @@ const Shop = () => {
                     </div>
                     
                     <div className="bg-gradient-to-br from-amber-400 to-orange-500 text-white px-6 py-3 rounded-2xl font-black text-xl flex items-center gap-2 shadow-lg shadow-orange-500/30">
-                        <Coins className="w-6 h-6 fill-white drop-shadow-md" /> {coins}
+                        <Coins className="w-6 h-6 fill-white drop-shadow-md" /> {user?.stats?.goldCoins || coins}
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {shopItems.map((item, idx) => (
                         <motion.div 
                             key={item.id}
@@ -66,8 +100,11 @@ const Shop = () => {
                                 <h3 className="text-lg font-black text-slate-900 dark:text-white mb-3">{item.name}</h3>
                                 
                                 {item.owned ? (
-                                    <button disabled className="w-full py-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold rounded-xl border border-emerald-200 dark:border-emerald-800/50 flex items-center justify-center gap-2 cursor-default">
-                                        <Check className="w-4 h-4" /> Owned
+                                    <button 
+                                        onClick={() => handleEquip(item.type, item.name)}
+                                        className="w-full py-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold rounded-xl border border-emerald-200 dark:border-emerald-800/50 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                                    >
+                                        <Check className="w-4 h-4" /> Equip
                                     </button>
                                 ) : (
                                     <button 
@@ -87,6 +124,7 @@ const Shop = () => {
                         </motion.div>
                     ))}
                 </div>
+                )}
             </div>
         </div>
     );

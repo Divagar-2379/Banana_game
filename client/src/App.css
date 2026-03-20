@@ -72,3 +72,37 @@
 input::placeholder {
   color: rgba(255, 255, 255, 0.25);
 }
+
+/* Gameplay Blur effect */
+@keyframes unblurEffect {
+  0% { filter: blur(15px); }
+  100% { filter: blur(0px); }
+}
+
+.animate-unblur {
+  animation: unblurEffect 3s ease-out forwards;
+}
+
+/* Cyberpunk theme overrides */
+body.theme-cyberpunk {
+  @apply bg-black text-[#0f0];
+}
+body.theme-cyberpunk .bg-slate-50,
+body.theme-cyberpunk .bg-white,
+body.theme-cyberpunk .dark\:bg-slate-900,
+body.theme-cyberpunk .dark\:bg-slate-800 {
+  background-color: #0d0d0d !important;
+  border-color: #0f0 !important;
+  color: #0f0 !important;
+  box-shadow: 0 0 10px #0f0 !important;
+}
+body.theme-cyberpunk .text-slate-900,
+body.theme-cyberpunk .text-slate-800,
+body.theme-cyberpunk .dark\:text-white {
+  color: #0f0 !important;
+}
+body.theme-cyberpunk input {
+  background-color: #111 !important;
+  color: #0f0 !important;
+  border-color: #0f0 !important;
+}

@@ -108,6 +108,40 @@ const initDatabase = async () => {
       ON otp_verifications(email)
     `);
 
+        // Create shop_items table
+        await query(`
+      CREATE TABLE IF NOT EXISTS shop_items (
+        id SERIAL PRIMARY KEY,
+        type VARCHAR(20) NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        price INTEGER NOT NULL,
+        icon VARCHAR(20) NOT NULL,
+        is_active BOOLEAN DEFAULT true
+      )
+    `);
+
+        // Insert initial shop items if not exists
+        await query(`
+      INSERT INTO shop_items (id, type, name, price, icon)
+      VALUES 
+        (1, 'avatar', 'Golden Banana', 200, '🍌'),
+        (2, 'avatar', 'Monkey King', 500, '🐵'),
+        (3, 'theme', 'Cyberpunk Theme', 1000, '🌃'),
+        (4, 'effect', 'Diamond Confetti', 750, '💎')
+      ON CONFLICT (id) DO NOTHING;
+    `);
+
+        // Create user_inventory table
+        await query(`
+      CREATE TABLE IF NOT EXISTS user_inventory (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        item_id INTEGER REFERENCES shop_items(id) ON DELETE CASCADE,
+        purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, item_id)
+      )
+    `);
+
         console.log('✅ Database tables initialized');
     } catch (error) {
         console.error('❌ Database initialization error:', error);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, User, Gamepad2, Menu, X, Command, Trophy, Store } from 'lucide-react';
+import { LogOut, User, Gamepad2, Menu, X, Command, Trophy, Store, Volume2, VolumeX } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, user, logout } = useAuth();
@@ -10,6 +10,13 @@ const Navbar = () => {
     const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const [isMuted, setIsMuted] = useState(localStorage.getItem('game_muted') === 'true');
+
+    const toggleMute = () => {
+        const newMutedState = !isMuted;
+        setIsMuted(newMutedState);
+        localStorage.setItem('game_muted', newMutedState.toString());
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -95,6 +102,14 @@ const Navbar = () => {
                                     Sign out
                                 </button>
                             )}
+
+                            <button
+                                onClick={toggleMute}
+                                className="flex items-center justify-center p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition ml-2"
+                                title={isMuted ? "Unmute sounds" : "Mute sounds"}
+                            >
+                                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                            </button>
                         </div>
                     </div>
 

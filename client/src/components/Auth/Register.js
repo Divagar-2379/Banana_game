@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -13,7 +14,7 @@ const Register = () => {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     
-    const { register } = useAuth();
+    const { register, googleLogin } = useAuth();
     const navigate = useNavigate();
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -53,25 +54,7 @@ const Register = () => {
             <div style={styles.blob1} />
             <div style={styles.blob2} />
 
-            {/* Right: Image Panel */}
-            <div style={styles.imagePanel}>
-                <img src="/auth-bg.png" alt="Banana Hunt" style={styles.bgImage} />
-                <div style={styles.imagePanelOverlay}>
-                    <div style={styles.gameBadge}>🏆 JOIN THE HUNT</div>
-                    <h1 style={styles.heroTitle}>Start Your<br /><span style={styles.heroAccent}>Adventure</span></h1>
-                    <p style={styles.heroDesc}>Create your account and start hunting bananas today!</p>
-                    <div style={styles.featureList}>
-                        {['100 Progressive Levels', 'Endless Streak Mode', 'Global Leaderboards', 'Daily Challenges'].map(f => (
-                            <div key={f} style={styles.featureItem}>
-                                <span style={styles.featureCheck}>✦</span>
-                                <span style={styles.featureText}>{f}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* Left: Form Panel */}
+            {/* Center: Form Panel */}
             <div style={styles.formPanel}>
                 <div style={styles.formInner}>
                     <div style={styles.logoRow}>
@@ -209,6 +192,23 @@ const Register = () => {
                         </button>
                     </form>
 
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+                        <GoogleLogin
+                            text="signup_with"
+                            onSuccess={credentialResponse => {
+                                googleLogin(credentialResponse.credential).then(res => {
+                                    if(res.success) navigate('/play');
+                                    else setError(res.message);
+                                });
+                            }}
+                            onError={() => {
+                                setError('Google Signup Failed');
+                            }}
+                            theme="filled_black"
+                            shape="pill"
+                        />
+                    </div>
+
                     <p style={styles.terms}>
                         By signing up you agree to our{' '}
                         <span style={{ color: '#f5c518', cursor: 'pointer' }}>Terms of Service</span>{' '}
@@ -227,8 +227,8 @@ const Register = () => {
 
 const styles = {
     root: {
-        minHeight: '100vh', display: 'flex', flexDirection: 'row-reverse',
-        background: '#0a0a0f', position: 'relative', overflow: 'hidden',
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'url(/auth-bg.png) no-repeat center center / cover', position: 'relative', overflow: 'hidden',
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     },
     blob1: {
@@ -274,11 +274,17 @@ const styles = {
     featureCheck: { color: '#f5c518', fontSize: '12px', fontWeight: 900 },
     featureText: { color: 'rgba(255,255,255,0.9)', fontSize: '14px', fontWeight: 600 },
     formPanel: {
-        width: '100%', maxWidth: '480px', minHeight: '100vh',
+        width: '100%', maxWidth: '480px', maxHeight: '90vh',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '32px 24px', position: 'relative', zIndex: 10,
-        borderRight: '1px solid rgba(255,255,255,0.06)',
+        padding: '40px 32px', position: 'relative', zIndex: 10,
         overflowY: 'auto',
+        background: 'rgba(10, 10, 15, 0.8)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '24px',
+        boxShadow: '0 24px 40px rgba(0,0,0,0.6)',
+        margin: '20px'
     },
     formInner: { width: '100%', maxWidth: '400px', paddingTop: '24px', paddingBottom: '24px' },
     logoRow: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '36px' },

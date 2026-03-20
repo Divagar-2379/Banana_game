@@ -156,11 +156,31 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const googleLogin = async (credential) => {
+        try {
+            const response = await api.post('/auth/google', { credential });
+            const { token, user, dailyReward } = response.data;
+            localStorage.setItem('token', token);
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            setUser({
+                ...user,
+                stats: user.stats || {
+                    gamesPlayed: 0, gamesWon: 0, totalScore: 0, currentStreak: 0, bestStreak: 0, goldCoins: 0
+                }
+            });
+            setIsAuthenticated(true);
+            return { success: true, dailyReward };
+        } catch (error) {
+            return { success: false, message: error.response?.data?.message || 'Google Auth failed' };
+        }
+    };
+
     const value = {
         user,
         isAuthenticated,
         loading,
         login,
+        googleLogin,
         verifyOtp,
         forgotPassword,
         resetPassword,

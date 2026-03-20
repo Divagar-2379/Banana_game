@@ -28,6 +28,7 @@ const Game = () => {
     // New mechanics state
     const [coins, setCoins] = useState(user?.stats?.goldCoins || 0);
     const [comboMultiplier, setComboMultiplier] = useState(1);
+    // eslint-disable-next-line no-unused-vars
     const [fastAnswers, setFastAnswers] = useState(0);
     const [questionStartTime, setQuestionStartTime] = useState(0);
     const [disabledKeys, setDisabledKeys] = useState([]);
@@ -225,6 +226,10 @@ const Game = () => {
                     playSound('click');
                 } else if (e.key === 'Enter' && guess) {
                     handleSubmit();
+                } else if (e.key.toLowerCase() === 'f') {
+                    handleTimeFreeze();
+                } else if (e.key.toLowerCase() === 'h') {
+                    handleFiftyFifty();
                 }
             }
         };
@@ -232,13 +237,13 @@ const Game = () => {
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [gameState, guess]);
+    }, [gameState, guess, coins, disabledKeys]);
 
     const maxLives = 3;
     const remainingLives = Math.max(0, maxLives - attempts);
 
     // Power-ups actions
-    const useTimeFreeze = () => {
+    const handleTimeFreeze = () => {
         if (coins >= 10 && gameState === 'playing') {
             setCoins(prev => prev - 10);
             setTimeLeft(prev => prev + 10);
@@ -247,7 +252,7 @@ const Game = () => {
         }
     };
 
-    const useFiftyFifty = () => {
+    const handleFiftyFifty = () => {
         if (coins >= 15 && gameState === 'playing' && disabledKeys.length === 0 && gameData?.solution) {
             setCoins(prev => prev - 15);
             // Hide 4 wrong keys
@@ -425,7 +430,7 @@ const Game = () => {
                                                 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                                                 src={gameData.question}
                                                 alt="Banana puzzle"
-                                                className={`w-full h-full object-contain max-h-[350px] transition-transform duration-500 ${gameMode === 'level' && currentLevel > 30 ? (currentLevel % 2 === 0 ? 'scale-x-[-1]' : 'rotate-[2deg]') : ''}`}
+                                                className={`w-full h-full object-contain max-h-[350px] transition-transform duration-500 ${gameMode === 'level' && currentLevel > 30 ? (currentLevel % 2 === 0 ? 'scale-x-[-1]' : 'rotate-[2deg]') : ''} ${gameMode === 'level' && currentLevel > 10 ? 'animate-unblur' : ''}`}
                                             />
                                         ) : (
                                             <Loader2 className="w-8 h-8 text-indigo-400 dark:text-indigo-500 animate-spin" />
@@ -444,7 +449,7 @@ const Game = () => {
                                         {gameState === 'playing' && (
                                             <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
                                                 <button 
-                                                    onClick={useTimeFreeze} disabled={coins < 10}
+                                                    onClick={handleTimeFreeze} disabled={coins < 10}
                                                     className={`p-2.5 rounded-xl border font-bold flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 group relative ${coins >= 10 ? 'bg-sky-500 border-sky-400 text-white shadow-sky-500/30' : 'bg-slate-200 border-slate-300 text-slate-400'}`}
                                                     title="Freeze Time (+10s) - 10 Coins"
                                                 >
@@ -452,7 +457,7 @@ const Game = () => {
                                                     <span className="absolute -bottom-8 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">10 Coins</span>
                                                 </button>
                                                 <button 
-                                                    onClick={useFiftyFifty} disabled={coins < 15 || disabledKeys.length > 0}
+                                                    onClick={handleFiftyFifty} disabled={coins < 15 || disabledKeys.length > 0}
                                                     className={`p-2.5 rounded-xl border font-bold flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 group relative ${coins >= 15 && disabledKeys.length === 0 ? 'bg-indigo-500 border-indigo-400 text-white shadow-indigo-500/30' : 'bg-slate-200 border-slate-300 text-slate-400'}`}
                                                     title="50/50 - 15 Coins"
                                                 >

@@ -42,6 +42,7 @@ const upload = multer({
 // Routes
 router.post('/register', registerValidation, authController.register);
 router.post('/login', loginValidation, authController.login);
+router.post('/google', authController.googleLogin);
 router.post('/verify-otp', authController.verifyOtp);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);

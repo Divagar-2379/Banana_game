@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
@@ -8,7 +9,7 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    const { login } = useAuth();
+    const { login, googleLogin } = useAuth();
     const navigate = useNavigate();
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -33,24 +34,7 @@ const Login = () => {
             <div style={styles.blob2} />
             <div style={styles.blob3} />
 
-            {/* Right: Background Image Panel */}
-            <div style={styles.imagePanel}>
-                <img src="/auth-bg.png" alt="Banana Hunt" style={styles.bgImage} />
-                <div style={styles.imagePanelOverlay}>
-                    <div style={styles.gameBadge}>🎮 GAME OF THE YEAR</div>
-                    <h1 style={styles.heroTitle}>Hunt The<br /><span style={styles.heroAccent}>Bananas</span></h1>
-                    <p style={styles.heroDesc}>Count fast. Score high. Become the champion.</p>
-                    <div style={styles.statRow}>
-                        <div style={styles.statItem}><span style={styles.statNum}>100</span><span style={styles.statLabel}>Levels</span></div>
-                        <div style={styles.statDivider} />
-                        <div style={styles.statItem}><span style={styles.statNum}>∞</span><span style={styles.statLabel}>Endless Mode</span></div>
-                        <div style={styles.statDivider} />
-                        <div style={styles.statItem}><span style={styles.statNum}>60s</span><span style={styles.statLabel}>Per Round</span></div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Left: Form Panel */}
+            {/* Center: Form Panel */}
             <div style={styles.formPanel}>
                 <div style={styles.formInner}>
                     {/* Logo */}
@@ -141,18 +125,20 @@ const Login = () => {
                         <div style={styles.dividerLine} />
                     </div>
 
-                    <div style={styles.socialRow}>
-                        {[
-                            { icon: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg', label: 'Google' },
-                        ].map(s => (
-                            <button key={s.label} type="button" style={styles.socialBtn}
-                                onMouseEnter={e => e.currentTarget.style.borderColor = '#f5c518'}
-                                onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
-                            >
-                                <img src={s.icon} alt={s.label} style={{ width: 18, height: 18 }} />
-                                <span>{s.label}</span>
-                            </button>
-                        ))}
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '28px' }}>
+                        <GoogleLogin
+                            onSuccess={credentialResponse => {
+                                googleLogin(credentialResponse.credential).then(res => {
+                                    if(res.success) navigate('/play');
+                                    else setError(res.message);
+                                });
+                            }}
+                            onError={() => {
+                                setError('Google Login Failed');
+                            }}
+                            theme="filled_black"
+                            shape="pill"
+                        />
                     </div>
 
                     <p style={styles.switchText}>
@@ -169,8 +155,9 @@ const styles = {
     root: {
         minHeight: '100vh',
         display: 'flex',
-        flexDirection: 'row-reverse',
-        background: '#0a0a0f',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'url(/auth-bg.png) no-repeat center center / cover',
         position: 'relative',
         overflow: 'hidden',
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -238,10 +225,16 @@ const styles = {
     statLabel: { fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em' },
     statDivider: { width: '1px', height: '32px', background: 'rgba(255,255,255,0.15)' },
     formPanel: {
-        width: '100%', maxWidth: '480px', minHeight: '100vh',
+        width: '100%', maxWidth: '480px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '32px 24px', position: 'relative', zIndex: 10,
-        borderRight: '1px solid rgba(255,255,255,0.06)',
+        padding: '40px 32px', position: 'relative', zIndex: 10,
+        background: 'rgba(10, 10, 15, 0.8)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '24px',
+        boxShadow: '0 24px 40px rgba(0,0,0,0.6)',
+        margin: '20px'
     },
     formInner: { width: '100%', maxWidth: '400px' },
     logoRow: {

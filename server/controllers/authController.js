@@ -9,6 +9,9 @@ const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const { query } = require('../config/database');
 const { sendOTPEmail } = require('../utils/emailService');
+const { OAuth2Client } = require('google-auth-library');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || 'dummy-client-id');
 
 // Helper: generate a 6-digit OTP string
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -120,10 +123,24 @@ exports.login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Update last login
+        // Daily login reward logic
+        let dailyReward = 0;
+        if (user.last_login) {
+            const lastLoginDate = new Date(user.last_login).toISOString().split('T')[0];
+            const todayDate = new Date().toISOString().split('T')[0];
+            if (lastLoginDate !== todayDate) {
+                dailyReward = 15;
+            }
+        } else {
+            dailyReward = 15; // first ever login
+        }
+
+        user.gold_coins += dailyReward;
+
+        // Update last login and give reward
         await query(
-            'UPDATE users SET last_login = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
-            [user.id]
+            'UPDATE users SET last_login = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP, gold_coins = $2 WHERE id = $1',
+            [user.id, user.gold_coins]
         );
 
         // Generate token
@@ -139,7 +156,8 @@ exports.login = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Login successful',
+            message: dailyReward > 0 ? `Login successful! Claimed ${dailyReward} Daily Reward Coins 🍌` : 'Login successful',
+            dailyReward: dailyReward,
             user: {
                 id: user.id,
                 username: user.username,
@@ -429,5 +447,75 @@ exports.updateProfile = async (req, res) => {
             return res.status(400).json({ message: 'Username or email already exists' });
         }
         res.status(500).json({ message: 'Server error while updating profile' });
+    }
+};
+
+// Google Login
+exports.googleLogin = async (req, res) => {
+    try {
+        const { credential } = req.body;
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID || 'dummy-client-id',
+        });
+        const payload = ticket.getPayload();
+        const email = payload['email'];
+        const name = payload['name'] || email.split('@')[0];
+
+        // Check if user exists
+        let userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
+        let user;
+        let dailyReward = 0;
+
+        if (userResult.rows.length === 0) {
+            // Create new Google User
+            const randomPassword = await bcrypt.hash(Math.random().toString(36).slice(-10), 10);
+            
+            const newUser = await query(
+                `INSERT INTO users (username, email, password, created_at, updated_at, gold_coins, theme, sound_enabled, games_played, games_won, total_score, current_streak, best_streak) 
+                 VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'light', true, 0, 0, 0, 0, 0) 
+                 RETURNING *`,
+                [name.substring(0, 30), email, randomPassword]
+            );
+            user = newUser.rows[0];
+        } else {
+            user = userResult.rows[0];
+            // Handle Daily Login Reward
+            const lastLogin = user.last_login;
+            const now = new Date();
+            
+            if (!lastLogin || lastLogin.toDateString() !== now.toDateString()) {
+                dailyReward = 15;
+                const newCoins = (user.gold_coins || 0) + 15;
+                await query('UPDATE users SET gold_coins = $1, last_login = CURRENT_TIMESTAMP WHERE id = $2', [newCoins, user.id]);
+                user.gold_coins = newCoins;
+            } else {
+                await query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+            }
+        }
+
+        const token = generateToken(user.id);
+        res.cookie('token', token, {
+            httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 24 * 60 * 60 * 1000
+        });
+
+        res.json({
+            success: true,
+            message: 'Google login successful',
+            dailyReward: dailyReward,
+            user: {
+                id: user.id, username: user.username, email: user.email,
+                soundEnabled: user.sound_enabled, theme: user.theme,
+                stats: {
+                    gamesPlayed: user.games_played, gamesWon: user.games_won,
+                    totalScore: user.total_score, currentStreak: user.current_streak,
+                    bestStreak: user.best_streak, goldCoins: user.gold_coins
+                }
+            },
+            token
+        });
+    } catch (error) {
+        console.error('Google login error:', error);
+        res.status(500).json({ success: false, message: 'Google authentication failed' });
     }
 };

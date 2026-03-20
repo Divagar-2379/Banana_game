@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { motion } from 'framer-motion';
-import { Trophy, Medal, Star, Target, Zap, LayoutDashboard } from 'lucide-react';
+import { Trophy, Medal, Star, Zap } from 'lucide-react';
 
 const Leaderboards = () => {
     const [leaders, setLeaders] = useState([]);

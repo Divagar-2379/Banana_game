@@ -1,4 +1,5 @@
 export const playSound = (type) => {
+    if (localStorage.getItem('game_muted') === 'true') return;
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
