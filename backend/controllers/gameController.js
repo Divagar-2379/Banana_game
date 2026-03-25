@@ -14,11 +14,11 @@ const BANANA_API_URL = process.env.BANANA_API_URL || 'https://marcconrad.com/uob
 const activeGames = new Map();
 
 // Update user stats in PostgreSQL
-const updateUserStats = async (userId, won, score, coinsEarned = 0) => {
+const updateUserStats = async (userId, won, score, coinsEarned = 0, xpEarned = 0) => {
     try {
         // Get current stats
         const currentStats = await query(
-            'SELECT games_played, games_won, current_streak, best_streak, total_score, gold_coins FROM users WHERE id = $1',
+            'SELECT games_played, games_won, current_streak, best_streak, total_score, gold_coins, xp, level FROM users WHERE id = $1',
             [userId]
         );
 
@@ -33,6 +33,9 @@ const updateUserStats = async (userId, won, score, coinsEarned = 0) => {
             : stats.best_streak;
         const newTotalScore = stats.total_score + score;
         const newGoldCoins = (stats.gold_coins || 0) + coinsEarned;
+        const newXp = (stats.xp || 0) + xpEarned;
+        const newLevel = Math.floor(Math.sqrt(newXp / 100)) + 1;
+        const levelUp = newLevel > stats.level;
 
         // Update database
         await query(
@@ -43,9 +46,11 @@ const updateUserStats = async (userId, won, score, coinsEarned = 0) => {
            best_streak = $4, 
            total_score = $5,
            gold_coins = $6,
+           xp = $7,
+           level = $8,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $7`,
-            [newGamesPlayed, newGamesWon, newCurrentStreak, newBestStreak, newTotalScore, newGoldCoins, userId]
+       WHERE id = $9`,
+            [newGamesPlayed, newGamesWon, newCurrentStreak, newBestStreak, newTotalScore, newGoldCoins, newXp, newLevel, userId]
         );
 
         return {
@@ -54,7 +59,10 @@ const updateUserStats = async (userId, won, score, coinsEarned = 0) => {
             currentStreak: newCurrentStreak,
             bestStreak: newBestStreak,
             totalScore: newTotalScore,
-            goldCoins: newGoldCoins
+            goldCoins: newGoldCoins,
+            xp: newXp,
+            level: newLevel,
+            levelUp: levelUp
         };
     } catch (error) {
         console.error('Error updating stats:', error);
@@ -158,16 +166,20 @@ exports.submitAnswer = async (req, res) => {
             // Calculate score
             const endTime = new Date();
             const timeTaken = (endTime - game.startTime) / 1000;
+            const remainingAttempts = game.maxAttempts - game.attempts;
+            
             const baseScore = 100;
             const attemptPenalty = (game.attempts - 1) * 20;
             const timeBonus = Math.max(0, 60 - timeTaken);
             const finalScore = Math.floor(baseScore - attemptPenalty + timeBonus);
             const coinsEarned = Math.floor(finalScore / 10);
+            
+            const xpEarned = Math.floor(50 + timeBonus + (remainingAttempts * 10));
 
             game.status = 'won';
 
             // Update user stats in PostgreSQL
-            const newStats = await updateUserStats(userId, true, Math.max(0, finalScore), coinsEarned);
+            const newStats = await updateUserStats(userId, true, Math.max(0, finalScore), coinsEarned, xpEarned);
 
             // Clean up
             activeGames.delete(gameId);
@@ -177,8 +189,9 @@ exports.submitAnswer = async (req, res) => {
                 correct: true,
                 score: Math.max(0, finalScore),
                 coinsEarned: coinsEarned,
+                xpEarned: xpEarned,
                 attempts: game.attempts,
-                message: '🎉 Correct! Great job!',
+                message: newStats.levelUp ? '🎉 Correct! AND YOU LEVELED UP!' : '🎉 Correct! Great job!',
                 stats: newStats
             });
 
@@ -188,8 +201,8 @@ exports.submitAnswer = async (req, res) => {
             if (remainingAttempts <= 0) {
                 game.status = 'lost';
 
-                // Update user stats (loss)
-                const newStats = await updateUserStats(userId, false, 0, 0);
+                // Update user stats (loss) gives 10 participation XP
+                const newStats = await updateUserStats(userId, false, 0, 0, 10);
 
                 activeGames.delete(gameId);
 

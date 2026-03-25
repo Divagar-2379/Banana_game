@@ -183,16 +183,18 @@ const Game = () => {
                 if (gameMode === 'level') {
                     if (currentLevel >= 100) {
                         setGameState('completed');
-                        setMessage(`Congratulations! You have completed all 100 levels!`);
+                        setMessage(`Congratulations! You have completed all 100 levels! (+${result.xpEarned} XP)`);
                     } else {
                         setGameState('won');
-                        setMessage(`Correct! Level ${currentLevel} cleared.`);
+                        const levelUpText = result.stats?.levelUp ? `🎉 LEVEL UP TO ${result.stats?.level}! 🎉` : '';
+                        setMessage(`Correct! Level ${currentLevel} cleared. +${result.xpEarned} XP ${levelUpText}`);
                         setCurrentLevel(prev => prev + 1);
                         setTimeout(() => startNextLevel(), 1500);
                     }
                 } else {
                     setGameState('won');
-                    setMessage(`Correct.`);
+                    const levelUpText = result.stats?.levelUp ? `🎉 LEVEL UP! 🎉` : '';
+                    setMessage(`Correct. +${result.xpEarned} XP ${levelUpText}`);
                     setTimeout(() => startNextLevel(), 1500);
                 }
             } else {

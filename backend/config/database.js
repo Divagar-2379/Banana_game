@@ -58,6 +58,8 @@ const initDatabase = async () => {
         gold_coins INTEGER DEFAULT 0,
         sound_enabled BOOLEAN DEFAULT true,
         theme VARCHAR(20) DEFAULT 'light',
+        xp INTEGER DEFAULT 0,
+        level INTEGER DEFAULT 1,
         last_login TIMESTAMP,
         is_active BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -65,8 +67,10 @@ const initDatabase = async () => {
       )
     `);
 
-        // Migration: add gold_coins if it doesn't exist
+        // Migration: add new columns if they don't exist
         await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS gold_coins INTEGER DEFAULT 0`);
+        await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS xp INTEGER DEFAULT 0`);
+        await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS level INTEGER DEFAULT 1`);
 
         // Create game_sessions table (optional - for history)
         await query(`

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import Stats from './Stats';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Mail, Edit3, Settings, Shield, Activity, User, ChevronRight, X, Camera, Bell, Eye, Moon, Check, UploadCloud, Trophy, Target } from 'lucide-react';
+import { Calendar, Mail, Edit3, Settings, Shield, Activity, User, ChevronRight, X, Camera, Bell, Eye, Moon, Check, UploadCloud, Trophy, Target, Zap } from 'lucide-react';
 
 const Profile = () => {
     const { user, updateProfile } = useAuth();
@@ -51,6 +51,12 @@ const Profile = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         </div>
     );
+
+    const currentLevel = user.stats?.level || 1;
+    const currentXp = user.stats?.xp || 0;
+    const prevLevelXp = Math.pow(currentLevel - 1, 2) * 100;
+    const nextLevelXp = Math.pow(currentLevel, 2) * 100;
+    const progress = Math.min(100, Math.max(0, ((currentXp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100));
 
     const getAvatarSrc = (avatar) => {
         if (!avatar || avatar === 'default-avatar.png') return null;
@@ -118,15 +124,35 @@ const Profile = () => {
                                     </button>
                                 </div>
 
-                                <div className="flex-1">
-                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight transition-colors">{user.username}</h2>
-                                    <div className="flex items-center gap-3 mt-2 text-sm font-medium">
+                                <div className="flex-1 w-full min-w-0 flex flex-col justify-center">
+                                    <div className="flex justify-between items-end mb-1">
+                                        <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight transition-colors">{user.username}</h2>
+                                        <span className="text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 px-3 py-1 rounded-full shadow-sm text-xs font-bold tracking-wider transition-colors flex items-center gap-1.5 shrink-0">
+                                            <Zap className="w-3.5 h-3.5 text-amber-500" />
+                                            LVL {currentLevel}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-3 mt-1 mb-4 text-sm font-medium">
                                         <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 rounded-full border border-emerald-100/50 dark:border-emerald-800/50 shadow-sm transition-colors">
                                             <Shield className="w-3.5 h-3.5" /> Verified Player
                                         </span>
-                                        <span className="text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 px-2.5 py-1 rounded-full shadow-sm text-xs font-bold uppercase tracking-wider transition-colors">
-                                            Level {Math.floor((user.stats?.totalGames || 0) / 10) + 1}
-                                        </span>
+                                    </div>
+
+                                    {/* XP Progress Bar */}
+                                    <div className="w-full bg-slate-100 dark:bg-slate-700/50 rounded-full h-2.5 mb-1.5 overflow-hidden border border-slate-200 dark:border-slate-700">
+                                        <motion.div 
+                                            className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-2.5 rounded-full relative" 
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${progress}%` }}
+                                            transition={{ duration: 1.2, ease: "easeOut" }}
+                                        >
+                                            <div className="absolute top-0 right-0 bottom-0 left-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0.15)_75%,transparent_75%,transparent)] bg-[length:1rem_1rem] animate-[progress-stripes_1s_linear_infinite]"></div>
+                                        </motion.div>
+                                    </div>
+                                    <div className="flex justify-between text-[11px] font-bold text-slate-400 dark:text-slate-500 tracking-wide uppercase">
+                                        <span><span className="text-indigo-500 dark:text-indigo-400 font-extrabold">{currentXp}</span> XP</span>
+                                        <span>{nextLevelXp} XP to Lvl {currentLevel + 1}</span>
                                     </div>
                                 </div>
 

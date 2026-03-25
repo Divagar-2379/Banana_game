@@ -56,7 +56,7 @@ exports.register = async (req, res) => {
         const newUser = await query(
             `INSERT INTO users (username, email, password, created_at, updated_at) 
        VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
-       RETURNING id, username, email, games_played, games_won, total_score, current_streak, best_streak, gold_coins`,
+       RETURNING id, username, email, games_played, games_won, total_score, current_streak, best_streak, gold_coins, xp, level`,
             [username, email, hashedPassword]
         );
 
@@ -85,9 +85,10 @@ exports.register = async (req, res) => {
                     gamesPlayed: user.games_played,
                     gamesWon: user.games_won,
                     totalScore: user.total_score,
-                    currentStreak: user.current_streak,
                     bestStreak: user.best_streak,
-                    goldCoins: user.gold_coins
+                    goldCoins: user.gold_coins,
+                    xp: user.xp,
+                    level: user.level
                 }
             },
             token
@@ -169,7 +170,9 @@ exports.login = async (req, res) => {
                     totalScore: user.total_score,
                     currentStreak: user.current_streak,
                     bestStreak: user.best_streak,
-                    goldCoins: user.gold_coins
+                    goldCoins: user.gold_coins,
+                    xp: user.xp,
+                    level: user.level
                 }
             },
             token
@@ -229,7 +232,9 @@ exports.verifyOtp = async (req, res) => {
                     totalScore: user.total_score,
                     currentStreak: user.current_streak,
                     bestStreak: user.best_streak,
-                    goldCoins: user.gold_coins
+                    goldCoins: user.gold_coins,
+                    xp: user.xp,
+                    level: user.level
                 }
             },
             token
@@ -354,8 +359,8 @@ exports.getMe = async (req, res) => {
     try {
         const userResult = await query(
             `SELECT id, username, email, avatar, games_played, games_won, total_score, 
-              current_streak, best_streak, gold_coins, sound_enabled, theme, last_login, created_at 
-       FROM users WHERE id = $1`,
+             current_streak, best_streak, created_at, gold_coins, theme, sound_enabled, xp, level
+             FROM users WHERE id = $1`,
             [req.userId]
         );
 
@@ -378,7 +383,9 @@ exports.getMe = async (req, res) => {
                     totalScore: user.total_score,
                     currentStreak: user.current_streak,
                     bestStreak: user.best_streak,
-                    goldCoins: user.gold_coins
+                    goldCoins: user.gold_coins,
+                    xp: user.xp,
+                    level: user.level
                 },
                 preferences: {
                     soundEnabled: user.sound_enabled,
@@ -472,8 +479,8 @@ exports.googleLogin = async (req, res) => {
             const randomPassword = await bcrypt.hash(Math.random().toString(36).slice(-10), 10);
             
             const newUser = await query(
-                `INSERT INTO users (username, email, password, created_at, updated_at, gold_coins, theme, sound_enabled, games_played, games_won, total_score, current_streak, best_streak) 
-                 VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'light', true, 0, 0, 0, 0, 0) 
+                `INSERT INTO users (username, email, password, created_at, updated_at, gold_coins, theme, sound_enabled, games_played, games_won, total_score, current_streak, best_streak, xp, level) 
+                 VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'light', true, 0, 0, 0, 0, 0, 0, 1) 
                  RETURNING *`,
                 [name.substring(0, 30), email, randomPassword]
             );
@@ -509,7 +516,8 @@ exports.googleLogin = async (req, res) => {
                 stats: {
                     gamesPlayed: user.games_played, gamesWon: user.games_won,
                     totalScore: user.total_score, currentStreak: user.current_streak,
-                    bestStreak: user.best_streak, goldCoins: user.gold_coins
+                    bestStreak: user.best_streak, goldCoins: user.gold_coins,
+                    xp: user.xp, level: user.level
                 }
             },
             token
